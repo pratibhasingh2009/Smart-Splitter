@@ -17,6 +17,9 @@ import {
   Share2,
   Users,
   CreditCard,
+  Sparkles,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -41,11 +44,19 @@ export const DashboardView: React.FC = () => {
     openAddExpenseModal,
     openCreateGroupModal,
     openSettleModal,
+    clearAllData,
+    loadDemoData,
   } = useApp();
 
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [tempBudget, setTempBudget] = useState(monthlyBudget.toString());
   const [budgetSuccessToast, setBudgetSuccessToast] = useState(false);
+  const [bannerToast, setBannerToast] = useState<string | null>(null);
+
+  const showBannerToast = (msg: string) => {
+    setBannerToast(msg);
+    setTimeout(() => setBannerToast(null), 3000);
+  };
 
   const metrics = calculateUserMetrics(currentUser.id, expenses, settlements);
   const smartTransactions = calculateSmartSettlements(expenses, settlements);
@@ -113,6 +124,72 @@ export const DashboardView: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Demo Data / Production Clean Mode Banner */}
+      <div className="px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 border border-blue-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-xl bg-white text-[#1E88E5] flex items-center justify-center shadow-xs">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-xs font-extrabold text-slate-800 block">
+              {expenses.length > 0
+                ? `Demo Mode Active (${expenses.length} sample expenses loaded)`
+                : '✨ Clean Slate Mode (0 expenses — Ready for your live data)'}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium block">
+              {expenses.length > 0
+                ? 'Want to use this for your real bills? Clear all demo data anytime in 1-click.'
+                : 'Add your first real bill or reload demo sample data anytime.'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {expenses.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Clear all demo data and start 100% fresh with 0 expenses?')) {
+                  clearAllData();
+                  showBannerToast('🧹 All demo data cleared! You are now in 100% fresh live mode.');
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-red-50 text-red-600 border border-red-200/80 text-xs font-bold flex items-center gap-1.5 shadow-2xs hover:border-red-300 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear Demo Data (Start Fresh)</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                loadDemoData();
+                showBannerToast('🔄 Demo sample dataset restored!');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-[#145DA0] border border-blue-200/80 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reload Demo Sample Data</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => openAddExpenseModal()}
+            className="px-3 py-1.5 rounded-xl bg-[#1E88E5] hover:bg-[#145DA0] text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-all"
+          >
+            <span>+ Add Real Bill</span>
+          </button>
+        </div>
+      </div>
+
+      {bannerToast && (
+        <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{bannerToast}</span>
+        </div>
+      )}
 
       {/* Monthly Budget & Savings Target Tracker */}
       <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">

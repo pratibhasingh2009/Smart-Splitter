@@ -54,6 +54,8 @@ export const ProfileSettingsView: React.FC = () => {
     addNewFriend,
     importData,
     resetData,
+    clearAllData,
+    loadDemoData,
     exportData,
     openFlowModal,
   } = useApp();
@@ -712,13 +714,26 @@ export const ProfileSettingsView: React.FC = () => {
 
               <button
                 onClick={() => {
-                  resetData();
-                  showDataToast('🔄 Reset back to clean sample dataset!');
+                  if (window.confirm('Clear all demo data and start 100% fresh with 0 expenses and groups?')) {
+                    clearAllData();
+                    showDataToast('🧹 All demo data cleared! You are now in 100% fresh live mode.');
+                  }
                 }}
                 className="w-full py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold flex items-center justify-center gap-2 transition-colors mt-2 cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" />
-                Reset to Sample Dataset
+                <Trash2 className="w-4 h-4" />
+                Clear Demo Data (Start 100% Fresh)
+              </button>
+
+              <button
+                onClick={() => {
+                  loadDemoData();
+                  showDataToast('🔄 Sample demo dataset restored successfully!');
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4 text-slate-500" />
+                Reload Sample Demo Dataset
               </button>
             </div>
           </div>

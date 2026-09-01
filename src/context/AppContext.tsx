@@ -148,6 +148,8 @@ interface AppContextType {
 
   // Data & Reset
   resetData: () => void;
+  clearAllData: () => void;
+  loadDemoData: () => void;
   exportData: (format: 'json' | 'csv') => void;
   importData: (jsonData: string) => boolean;
   openFlowModal: () => void;
@@ -953,6 +955,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.clear();
   };
 
+  const clearAllData = () => {
+    // Keeps current user profile, wipes all sample expenses, settlements, groups & messages
+    setExpenses([]);
+    setGroups([]);
+    setSettlements([]);
+    setRecurringExpenses([]);
+    setNotifications([]);
+    setGroupMessages([]);
+    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
+    localStorage.removeItem(STORAGE_KEYS.GROUPS);
+    localStorage.removeItem(STORAGE_KEYS.SETTLEMENTS);
+    localStorage.removeItem(STORAGE_KEYS.RECURRING);
+    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+  };
+
+  const loadDemoData = () => {
+    setUsers(INITIAL_USERS);
+    setCurrentUser(INITIAL_USERS[0]);
+    setGroups(INITIAL_GROUPS);
+    setExpenses(INITIAL_EXPENSES);
+    setSettlements(INITIAL_SETTLEMENTS);
+    setRecurringExpenses(INITIAL_RECURRING);
+    setNotifications(INITIAL_NOTIFICATIONS);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+    localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(INITIAL_GROUPS));
+    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
+    localStorage.setItem(STORAGE_KEYS.SETTLEMENTS, JSON.stringify(INITIAL_SETTLEMENTS));
+    localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(INITIAL_RECURRING));
+  };
+
   const exportData = (format: 'json' | 'csv') => {
     if (format === 'json') {
       const dataStr = JSON.stringify(
@@ -1057,6 +1090,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markNotificationAsRead,
         markAllNotificationsAsRead,
         resetData,
+        clearAllData,
+        loadDemoData,
         exportData,
         importData,
         openFlowModal,
