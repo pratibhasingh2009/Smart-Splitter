@@ -16,13 +16,24 @@ import {
   Users,
   Info,
   X,
+  Trash2,
+  Edit2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ExpenseCategory, Expense } from '../../types';
 import { formatCurrency, CATEGORY_CONFIG } from '../../utils/settlementCalculator';
 
 export const RecentExpenses: React.FC = () => {
-  const { expenses, groups, users, currentUser, currency, setCurrentView, openAddExpenseModal } = useApp();
+  const {
+    expenses,
+    groups,
+    users,
+    currentUser,
+    currency,
+    setCurrentView,
+    openAddExpenseModal,
+    deleteExpense,
+  } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeExpenseDetail, setActiveExpenseDetail] = useState<Expense | null>(null);
@@ -141,7 +152,7 @@ export const RecentExpenses: React.FC = () => {
                   key={expense.id}
                   id={`recent-expense-${idx}`}
                   onClick={() => setActiveExpenseDetail(expense)}
-                  className={`flex items-center justify-between gap-3 p-2.5 rounded-2xl hover:bg-slate-50 cursor-pointer border border-transparent hover:border-slate-200/60 transition-all`}
+                  className="group flex items-center justify-between gap-3 p-2.5 rounded-2xl hover:bg-slate-50 cursor-pointer border border-transparent hover:border-slate-200/60 transition-all relative"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
@@ -160,13 +171,43 @@ export const RecentExpenses: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] font-semibold text-slate-400 block">
-                      {formatDate(expense.date)}
-                    </span>
-                    <span className="text-xs font-black text-[#145DA0] tracking-tight">
-                      {formatCurrency(expense.amount, currency)}
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <span className="text-[10px] font-semibold text-slate-400 block">
+                        {formatDate(expense.date)}
+                      </span>
+                      <span className="text-xs font-black text-[#145DA0] tracking-tight">
+                        {formatCurrency(expense.amount, currency)}
+                      </span>
+                    </div>
+
+                    {/* Quick action buttons on hover / mobile */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAddExpenseModal(expense.groupId, expense);
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-[#1E88E5] transition-colors"
+                        title="Edit Expense"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete "${expense.title}"?`)) {
+                            deleteExpense(expense.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors"
+                        title="Delete Expense"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -265,12 +306,40 @@ export const RecentExpenses: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exp = activeExpenseDetail;
+                    setActiveExpenseDetail(null);
+                    openAddExpenseModal(exp.groupId, exp);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-[#1E88E5] text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete "${activeExpenseDetail.title}"?`)) {
+                      deleteExpense(activeExpenseDetail.id);
+                      setActiveExpenseDetail(null);
+                    }
+                  }}
+                  className="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Expense</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setActiveExpenseDetail(null)}
                 className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-900 transition-colors"
               >
-                Done
+                Close
               </button>
             </div>
           </div>
