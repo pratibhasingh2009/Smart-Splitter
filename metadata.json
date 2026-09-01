@@ -1,0 +1,6 @@
+{
+  "name": "Personal Budget Splitter",
+  "description": "Smart shared expense manager with equal, percentage & custom splits, debt simplification, recurring expenses, and spending insights.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

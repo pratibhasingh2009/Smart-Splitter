@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to validate string length
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Groups Collection
+    match /groups/{groupId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Expenses Collection
+    match /expenses/{expenseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Settlements Collection
+    match /settlements/{settlementId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Recurring Expenses Collection
+    match /recurringExpenses/{recId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Group Chat Messages Collection
+    match /groupMessages/{messageId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

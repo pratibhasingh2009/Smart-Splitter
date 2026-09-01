@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Registered app users and friends in the budget ledger",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the user" },
+        "name": { "type": "string", "description": "Display name of the user" },
+        "email": { "type": "string", "description": "Email address" },
+        "avatar": { "type": "string", "description": "Avatar image URL" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "upiId": { "type": "string", "description": "UPI ID for smart settlements" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "Group": {
+      "title": "Budget Group",
+      "description": "Group of users sharing shared expenses (Trips, Flatmates, Projects)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the group" },
+        "name": { "type": "string", "description": "Name of the group" },
+        "description": { "type": "string", "description": "Description of the group purpose" },
+        "category": { "type": "string", "enum": ["trip", "home", "friends", "work", "other"] },
+        "color": { "type": "string", "description": "Theme accent color hex" },
+        "iconName": { "type": "string", "description": "Lucide icon identifier" },
+        "members": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs in group" },
+        "budget": { "type": "number", "description": "Monthly or total target spending limit" },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "authorId": { "type": "string" },
+              "authorName": { "type": "string" },
+              "text": { "type": "string" },
+              "createdAt": { "type": "string" }
+            },
+            "required": ["id", "authorId", "authorName", "text", "createdAt"]
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "members"]
+    },
+    "Expense": {
+      "title": "Expense Record",
+      "description": "Detailed logged expense with multi-mode bill split calculations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the expense" },
+        "title": { "type": "string", "description": "Title / description of the expense" },
+        "amount": { "type": "number", "description": "Total amount paid" },
+        "date": { "type": "string", "description": "Date of expense (YYYY-MM-DD)" },
+        "paidBy": { "type": "string", "description": "User ID who paid the bill" },
+        "groupId": { "type": "string", "description": "Group ID or 'personal'" },
+        "category": { 
+          "type": "string",
+          "enum": ["food", "travel", "shopping", "entertainment", "rent", "utilities", "groceries", "health", "others"]
+        },
+        "splitMode": { "type": "string", "enum": ["EQUAL", "PERCENTAGE", "CUSTOM"] },
+        "splits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "memberId": { "type": "string" },
+              "amount": { "type": "number" },
+              "percentage": { "type": "number" }
+            },
+            "required": ["memberId", "amount"]
+          }
+        },
+        "notes": { "type": "string", "description": "Additional remarks or receipt note" },
+        "receiptUrl": { "type": "string", "description": "Optional receipt image" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "amount": { "type": "number" },
+              "assignedMembers": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["id", "name", "amount", "assignedMembers"]
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "amount", "date", "paidBy", "groupId", "splitMode", "splits"]
+    },
+    "SettlementRecord": {
+      "title": "Settlement Record",
+      "description": "Debt settlement transaction between two users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of settlement" },
+        "fromId": { "type": "string", "description": "User ID who settled/paid" },
+        "toId": { "type": "string", "description": "User ID who received money" },
+        "amount": { "type": "number", "description": "Settled amount" },
+        "date": { "type": "string", "description": "Date of transaction" },
+        "groupId": { "type": "string", "description": "Group ID where settlement occurred" },
+        "method": { "type": "string", "enum": ["cash", "upi", "bank_transfer", "other"] },
+        "notes": { "type": "string", "description": "Transaction reference / notes" }
+      },
+      "required": ["id", "fromId", "toId", "amount", "date"]
+    },
+    "RecurringExpense": {
+      "title": "Recurring Expense",
+      "description": "Recurring flat rent, subscriptions, or shared utilities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique recurring identifier" },
+        "title": { "type": "string", "description": "Name of subscription / bill" },
+        "amount": { "type": "number", "description": "Periodic charge" },
+        "category": { "type": "string" },
+        "groupId": { "type": "string" },
+        "paidBy": { "type": "string" },
+        "splitMode": { "type": "string" },
+        "splits": { "type": "array" },
+        "frequency": { "type": "string", "enum": ["weekly", "monthly", "yearly"] },
+        "nextDueDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "paused"] }
+      },
+      "required": ["id", "title", "amount", "frequency", "nextDueDate", "status"]
+    },
+    "GroupChatMessage": {
+      "title": "Group Chat Message",
+      "description": "Real-time chat messages, file attachments, and photos sent inside a group",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique message ID" },
+        "groupId": { "type": "string", "description": "Target group ID" },
+        "senderId": { "type": "string", "description": "Sender User ID" },
+        "senderName": { "type": "string", "description": "Sender display name" },
+        "senderAvatar": { "type": "string", "description": "Sender avatar URL" },
+        "text": { "type": "string", "description": "Text body of the message" },
+        "fileUrl": { "type": "string", "description": "Optional attached image or document URL" },
+        "fileName": { "type": "string", "description": "Optional attached file name" },
+        "fileType": { "type": "string", "enum": ["image", "pdf"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "groupId", "senderId", "senderName", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "entity": "UserProfile",
+      "description": "Collection of all app users and buddies"
+    },
+    "groups": {
+      "entity": "Group",
+      "description": "Collection of budget groups and shared ledgers"
+    },
+    "expenses": {
+      "entity": "Expense",
+      "description": "Collection of split expenses"
+    },
+    "settlements": {
+      "entity": "SettlementRecord",
+      "description": "Collection of recorded debt payments"
+    },
+    "recurringExpenses": {
+      "entity": "RecurringExpense",
+      "description": "Collection of recurring bills and subscriptions"
+    },
+    "groupMessages": {
+      "entity": "GroupChatMessage",
+      "description": "Collection of real-time group chat messages and media"
+    }
+  }
+}
