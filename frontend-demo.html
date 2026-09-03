@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Budget & Expense Splitter - Frontend Preview</title>
+  <!-- Tailwind CSS CDN for instant styling in any browser -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-100">
+          ₹
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 leading-tight">SmartSplit</h1>
+          <p class="text-xs text-slate-500">Personal & Shared Expense Manager</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          ● Frontend Prototype Active
+        </span>
+        <button onclick="openModal('addExpenseModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center space-x-1">
+          <span>+</span>
+          <span>Add Expense</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- TOP STATS ROW -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <!-- Stat 1 -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Group Spent</p>
+          <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">This Month</span>
+        </div>
+        <h3 class="text-2xl font-bold text-slate-900 mt-2" id="totalSpent">₹18,450.00</h3>
+        <p class="text-xs text-slate-400 mt-1">Across 4 active groups</p>
+      </div>
+
+      <!-- Stat 2 -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">You Are Owed</p>
+          <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">+ Incoming</span>
+        </div>
+        <h3 class="text-2xl font-bold text-emerald-600 mt-2">₹3,250.00</h3>
+        <p class="text-xs text-slate-400 mt-1">From 2 members</p>
+      </div>
+
+      <!-- Stat 3 -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-semibold text-rose-600 uppercase tracking-wider">You Owe</p>
+          <span class="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-medium">- Outgoing</span>
+        </div>
+        <h3 class="text-2xl font-bold text-rose-600 mt-2">₹1,120.00</h3>
+        <p class="text-xs text-slate-400 mt-1">To Rahul Verma</p>
+      </div>
+
+      <!-- Stat 4 -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Net Balance</p>
+          <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-medium">Status</span>
+        </div>
+        <h3 class="text-2xl font-bold text-indigo-600 mt-2">+₹2,130.00</h3>
+        <p class="text-xs text-emerald-600 font-medium mt-1">You are in net profit</p>
+      </div>
+    </div>
+
+    <!-- 2 COLUMN LAYOUT: GROUPS & EXPENSES + SETTLEMENT -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- LEFT 2 COLS: RECENT EXPENSES & GROUPS -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Active Group Selector Pill -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="text-2xl">🏖️</span>
+            <div>
+              <h4 class="font-bold text-slate-900">Goa Vacation Trip 2026</h4>
+              <p class="text-xs text-slate-500">4 Members • You, Rahul, Priya, Amit</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="alert('Switch Group Clicked!')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-lg transition">
+              Switch Group
+            </button>
+            <button onclick="openModal('addExpenseModal')" class="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition">
+              + Add Bill
+            </button>
+          </div>
+        </div>
+
+        <!-- Expense List -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-base">Recent Group Expenses</h3>
+            <span class="text-xs text-slate-400">Total 5 transactions</span>
+          </div>
+
+          <div class="divide-y divide-slate-100" id="expenseList">
+            
+            <!-- Expense Item 1 -->
+            <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition">
+              <div class="flex items-center space-x-4">
+                <div class="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                  🍕
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-900 text-sm">Beachside Dinner & Drinks</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Paid by <strong class="text-slate-700">You</strong> • Split equally amongst 4</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-slate-900 text-base">₹4,200.00</p>
+                <p class="text-xs text-emerald-600 font-medium">You lent ₹3,150.00</p>
+              </div>
+            </div>
+
+            <!-- Expense Item 2 -->
+            <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition">
+              <div class="flex items-center space-x-4">
+                <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                  🚕
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-900 text-sm">Airport Cab Transfer</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Paid by <strong class="text-slate-700">Rahul Verma</strong> • Split equally</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-slate-900 text-base">₹1,800.00</p>
+                <p class="text-xs text-rose-600 font-medium">You owe ₹450.00</p>
+              </div>
+            </div>
+
+            <!-- Expense Item 3 -->
+            <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition">
+              <div class="flex items-center space-x-4">
+                <div class="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl">
+                  🏡
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-900 text-sm">Villa Advance Booking</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Paid by <strong class="text-slate-700">Priya Sharma</strong> • 4 Members</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-slate-900 text-base">₹10,500.00</p>
+                <p class="text-xs text-rose-600 font-medium">You owe ₹2,625.00</p>
+              </div>
+            </div>
+
+            <!-- Expense Item 4 -->
+            <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition">
+              <div class="flex items-center space-x-4">
+                <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
+                  🛒
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-900 text-sm">Supermarket Groceries & Snacks</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Paid by <strong class="text-slate-700">You</strong> • Split equally</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-slate-900 text-base">₹1,950.00</p>
+                <p class="text-xs text-emerald-600 font-medium">You lent ₹1,462.50</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT 1 COL: SMART SETTLEMENT & UPI CARD -->
+      <div class="space-y-6">
+        
+        <!-- Smart Split Settlement Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-900 text-base">Smart Debt Settlement</h3>
+            <span class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">
+              Greedy Algorithm
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">
+            Simplified debt resolution minimizes total transactions across group members.
+          </p>
+
+          <!-- Settlements List -->
+          <div class="space-y-3">
+            
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+              <div>
+                <span class="font-semibold text-slate-800">Amit Kumar</span>
+                <span class="text-slate-400 mx-1">pays</span>
+                <span class="font-semibold text-emerald-700">You</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900">₹1,787.50</span>
+                <button onclick="alert('Settlement marked as paid!')" class="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700">
+                  Settle
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+              <div>
+                <span class="font-semibold text-slate-800">Rahul Verma</span>
+                <span class="text-slate-400 mx-1">pays</span>
+                <span class="font-semibold text-emerald-700">You</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900">₹1,462.50</span>
+                <button onclick="alert('Settlement marked as paid!')" class="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700">
+                  Settle
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+              <div>
+                <span class="font-semibold text-rose-700">You</span>
+                <span class="text-slate-400 mx-1">pay</span>
+                <span class="font-semibold text-slate-800">Priya Sharma</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900">₹1,120.00</span>
+                <button onclick="openModal('upiModal')" class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700">
+                  Pay UPI
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Quick Summary Card -->
+        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-indigo-300">Frontend Presentation Mode</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          </div>
+          <h4 class="font-bold text-lg mt-3">Smart-Split UI Architecture</h4>
+          <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+            Demonstrating UI components: Responsive Dashboard, Dynamic Balance Card, Multi-split Settlement Logic, and Instant UPI Payment Interface.
+          </p>
+          <div class="mt-4 pt-4 border-t border-indigo-800/60 flex items-center justify-between text-xs text-slate-400">
+            <span>Stand-alone HTML</span>
+            <span>Zero Server Setup</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADD EXPENSE -->
+  <div id="addExpenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-lg">Add New Group Expense</h3>
+        <button onclick="closeModal('addExpenseModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Expense Title</label>
+          <input id="newExpenseTitle" type="text" placeholder="e.g. Dinner, Fuel, Hotel" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 text-sm" value="Dinner Buffet" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Total Amount (₹)</label>
+          <input id="newExpenseAmount" type="number" placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 text-sm" value="2400" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Paid By</label>
+          <select class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+            <option>You</option>
+            <option>Rahul Verma</option>
+            <option>Priya Sharma</option>
+            <option>Amit Kumar</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Split Method</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 border border-indigo-600 text-indigo-700">Equally</button>
+            <button class="py-1.5 text-xs font-semibold rounded-lg bg-slate-50 border border-slate-200 text-slate-600">Exact ₹</button>
+            <button class="py-1.5 text-xs font-semibold rounded-lg bg-slate-50 border border-slate-200 text-slate-600">% Percent</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-3">
+        <button onclick="closeModal('addExpenseModal')" class="flex-1 py-2 rounded-lg border border-slate-200 font-semibold text-slate-600 text-sm hover:bg-slate-50">Cancel</button>
+        <button onclick="addNewExpenseMock()" class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow">Add Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: UPI PAYMENT QR CODE -->
+  <div id="upiModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <h3 class="font-bold text-slate-900 text-base">Pay via UPI QR</h3>
+        <button onclick="closeModal('upiModal')" class="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
+        <!-- Generated visual QR mockup -->
+        <div class="w-44 h-44 bg-white p-2 rounded-lg border border-slate-300 shadow-inner flex flex-col items-center justify-center">
+          <svg class="w-36 h-36 text-slate-800" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h4v2h-4v-2zm-4 0h2v4h-2v-4zm2 4h4v2h-4v-2zm2-2h2v2h-2v-2zm-4 4h2v2h-2v-2zm6 0h2v2h-2v-2zM5 5h2v2H5V5zm12 0h2v2h-2V5zM5 17h2v2H5v-2z"/>
+          </svg>
+        </div>
+        <p class="text-xs font-semibold text-slate-700 mt-3">Scan with Google Pay, PhonePe, or Paytm</p>
+        <p class="text-xs text-slate-500 font-mono mt-1">priyasharma@oksbi</p>
+      </div>
+
+      <div class="flex justify-between items-center text-sm font-semibold px-2">
+        <span class="text-slate-600">Settlement Amount:</span>
+        <span class="text-slate-900 text-lg">₹1,120.00</span>
+      </div>
+
+      <button onclick="alert('Payment status confirmed!'); closeModal('upiModal');" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow">
+        Mark as Paid & Settled
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function addNewExpenseMock() {
+      const title = document.getElementById('newExpenseTitle').value || 'New Expense';
+      const amount = parseFloat(document.getElementById('newExpenseAmount').value) || 0;
+
+      const list = document.getElementById('expenseList');
+      const item = document.createElement('div');
+      item.className = 'p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition bg-indigo-50/40';
+      item.innerHTML = `
+        <div class="flex items-center space-x-4">
+          <div class="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+            🧾
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">${title}</h4>
+            <p class="text-xs text-slate-500 mt-0.5">Paid by <strong class="text-slate-700">You</strong> • Just now</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-slate-900 text-base">₹${amount.toFixed(2)}</p>
+          <p class="text-xs text-emerald-600 font-medium">Added to Group</p>
+        </div>
+      `;
+      list.prepend(item);
+
+      closeModal('addExpenseModal');
+      alert('Expense successfully added to Frontend view!');
+    }
+  </script>
+
+</body>
+</html>
