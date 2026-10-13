@@ -138,6 +138,47 @@
       URL.revokeObjectURL(url);
       alert('Aapki edited report file download ho gayi hai! 🎉');
     }
+
+    function uploadProjectPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        insertPhotoToReport(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function insertPhotoToReport(dataUrl) {
+      const gallery = document.getElementById('userPhotoGallery');
+      if (!gallery) return;
+      const div = document.createElement('div');
+      div.className = 'border-2 border-slate-300 rounded-xl p-3 bg-white shadow-sm my-4';
+      div.innerHTML = `
+        <div class="flex justify-between items-center bg-slate-100 p-2 rounded text-xs font-bold text-slate-700 mb-2">
+          <span contenteditable="true">Fig 6.x: SmartSplit Live Project Execution Screenshot (Group 7)</span>
+          <button onclick="this.closest('.border-2').remove()" class="no-print text-rose-600 hover:text-rose-800 font-bold px-2">✕ Remove</button>
+        </div>
+        <img src="${dataUrl}" class="w-full rounded-lg border border-slate-200 object-contain max-h-[380px]" alt="Project Screenshot" />
+      `;
+      gallery.appendChild(div);
+    }
+
+    // Support Ctrl+V paste of images directly into page
+    window.addEventListener('paste', function(e) {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            insertPhotoToReport(event.target.result);
+          };
+          reader.readAsDataURL(blob);
+        }
+      }
+    });
   </script>
 
   <!-- ========================================== -->
@@ -717,6 +758,20 @@
       <p class="text-justify text-base leading-relaxed mb-4">
         Below are high-fidelity captures of the SmartSplit interface running the <strong>Group 7 Trip Case Study</strong>:
       </p>
+
+      <!-- IMAGE UPLOAD CONTROLS FOR USER SCREENSHOTS -->
+      <div class="no-print my-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between">
+        <div class="text-xs text-indigo-900 font-semibold">
+          📷 <strong>Add Your Project Screenshots:</strong> Click button to select image from computer, or paste (Ctrl+V) directly!
+        </div>
+        <label class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition shadow">
+          <span>+ Upload Screenshot</span>
+          <input type="file" accept="image/*" class="hidden" onchange="uploadProjectPhoto(event)">
+        </label>
+      </div>
+
+      <!-- DYNAMIC CONTAINER FOR UPLOADED USER PHOTOS -->
+      <div id="userPhotoGallery" class="space-y-4 mb-4"></div>
 
       <!-- EMBEDDED UI MOCKUP 1: DASHBOARD -->
       <div class="border-2 border-slate-300 rounded-xl p-3 bg-white shadow-sm mb-4">
