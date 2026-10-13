@@ -14,10 +14,10 @@ in
 
 | Student Name | Roll Number | Year & Branch |
 | :--- | :--- | :--- |
-| **Pratibha Singh** | [Roll Number] | 2nd Year, B.Tech CSE |
-| **Pratiksha Singh** | [Roll Number] | 2nd Year, B.Tech CSE |
-| **Priyansh Kalra** | [Roll Number] | 2nd Year, B.Tech CSE |
-| **Priyam Tripathi** | [Roll Number] | 2nd Year, B.Tech CSE |
+| **Pratibha Singh** | 2401920100419 | 2nd Year, B.Tech CSE |
+| **Pratiksha Singh** | 2401920100422 | 2nd Year, B.Tech CSE |
+| **Priyansh Kalra** | 2401920100438 | 2nd Year, B.Tech CSE |
+| **Priyam Tripathi** | 2401920100437 | 2nd Year, B.Tech CSE |
 
 ---
 
@@ -95,7 +95,7 @@ The matter embodied in this project report has not been submitted earlier for th
 <br><br><br><br>
 
 __________________________________________  
-**Dr. Nikhil Sharma**  
+**Mr. Abhijeet Gupta**  
 *Project Guide / Coordinator*  
 Assistant Professor  
 Department of Computer Science & Engineering  
@@ -116,7 +116,7 @@ G.L. Bajaj Institute of Technology & Management
 
 The merciful guidance bestowed to us by the Almighty made us stick out this project to a successful and fruitful end. We humbly pray with sincere hearts for guidance to continue forever.
 
-We express our deepest gratitude and heartfelt thanks to our respected Project Guide **Dr. Nikhil Sharma**, Assistant Professor, Department of Computer Science & Engineering, for providing insightful guidance, constructive criticism, and continuous encouragement throughout the conception, development, and completion of this project. His versatile technical knowledge helped us sail through critical roadblocks during the span of this work.
+We express our deepest gratitude and heartfelt thanks to our respected Project Guide **Mr. Abhijeet Gupta**, Assistant Professor, Department of Computer Science & Engineering, for providing insightful guidance, constructive criticism, and continuous encouragement throughout the conception, development, and completion of this project. His versatile technical knowledge helped us sail through critical roadblocks during the span of this work.
 
 We extend our sincere regards and special thanks to our Head of Department, **Dr. Sansar Singh Chauhan**, for providing state-of-the-art laboratory infrastructure, computational facilities, and continuous administrative support.
 

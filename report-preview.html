@@ -72,14 +72,73 @@
   <div class="no-print fixed top-4 right-6 z-50 flex items-center space-x-3 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700">
     <div class="text-xs">
       <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-      <span class="font-medium text-slate-200">Group 7 (2nd Year) • <strong>Live Editable</strong></span>
+      <span class="font-medium text-slate-200">Group 7 (2nd Year)</span>
     </div>
     <div class="h-4 w-px bg-slate-700"></div>
-    <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-5 py-2.5 rounded-xl shadow transition flex items-center space-x-2 cursor-pointer">
+
+    <!-- BUTTON 1: DIRECT SAVE AS PDF (Ctrl+P) -->
+    <button onclick="handlePrintPDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-      <span>Click Here to Save as PDF</span>
+      <span>1. Save as PDF</span>
+    </button>
+
+    <!-- BUTTON 2: DOWNLOAD AS WORD (.DOC) -->
+    <button onclick="downloadAsWordDoc()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <span>2. Download Word (.doc)</span>
+    </button>
+
+    <!-- BUTTON 3: SAVE EDITED HTML -->
+    <button onclick="saveEditedHTML()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      <span>3. Save Edited File</span>
     </button>
   </div>
+
+  <script>
+    function handlePrintPDF() {
+      window.print();
+    }
+
+    function downloadAsWordDoc() {
+      const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Group 7 Project Report</title></head><body>";
+      const footer = "</body></html>";
+      
+      // Clone document and remove toolbar
+      const clone = document.body.cloneNode(true);
+      const toolbar = clone.querySelector('.no-print');
+      if (toolbar) toolbar.remove();
+
+      const htmlContent = header + clone.innerHTML + footer;
+      const blob = new Blob(['\ufeff', htmlContent], {
+        type: 'application/msword'
+      });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'SmartSplit_Project_Report_Group_7.doc';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function saveEditedHTML() {
+      // Save current edited document state as HTML file
+      const currentHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([currentHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'report-preview.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert('Aapki edited report file download ho gayi hai! 🎉');
+    }
+  </script>
 
   <!-- ========================================== -->
   <!-- PAGE 1: TITLE PAGE (COVER) -->
@@ -101,22 +160,22 @@
         <p class="font-bold text-center text-sm mb-3 uppercase tracking-widest text-slate-700">Submitted By (Group No. 7)</p>
         <div class="grid grid-cols-2 gap-y-2.5 text-base">
           <div><strong contenteditable="true">Pratibha Singh</strong></div>
-          <div class="text-right" contenteditable="true">Roll No: 2401920100XXX</div>
+          <div class="text-right" contenteditable="true">Roll No: 2401920100419</div>
 
           <div><strong contenteditable="true">Pratiksha Singh</strong></div>
-          <div class="text-right" contenteditable="true">Roll No: 2401920100XXX</div>
+          <div class="text-right" contenteditable="true">Roll No: 2401920100422</div>
 
           <div><strong contenteditable="true">Priyansh Kalra</strong></div>
-          <div class="text-right" contenteditable="true">Roll No: 2401920100XXX</div>
+          <div class="text-right" contenteditable="true">Roll No: 2401920100438</div>
 
           <div><strong contenteditable="true">Priyam Tripathi</strong></div>
-          <div class="text-right" contenteditable="true">Roll No: 2401920100XXX</div>
+          <div class="text-right" contenteditable="true">Roll No: 2401920100437</div>
         </div>
       </div>
 
       <div class="my-6">
         <p class="text-sm font-semibold uppercase text-slate-600">Under the Supervision of</p>
-        <h4 class="text-lg font-bold text-slate-900 mt-1">Dr. Nikhil Sharma</h4>
+        <h4 class="text-lg font-bold text-slate-900 mt-1">Mr. Abhijeet Gupta</h4>
         <p class="text-sm text-slate-600">Assistant Professor, Department of Computer Science & Engineering</p>
       </div>
     </div>
@@ -164,13 +223,13 @@
           <div>
             <p class="mb-6">Signature: _______________________</p>
             <p><strong>Name:</strong> Pratibha Singh</p>
-            <p><strong>Roll No:</strong> 2401920100XXX</p>
+            <p><strong>Roll No:</strong> 2401920100419</p>
             <p class="text-xs text-slate-500">2nd Year, B.Tech CSE</p>
           </div>
           <div>
             <p class="mb-6">Signature: _______________________</p>
             <p><strong>Name:</strong> Pratiksha Singh</p>
-            <p><strong>Roll No:</strong> 2401920100XXX</p>
+            <p><strong>Roll No:</strong> 2401920100422</p>
             <p class="text-xs text-slate-500">2nd Year, B.Tech CSE</p>
           </div>
         </div>
@@ -179,13 +238,13 @@
           <div>
             <p class="mb-6">Signature: _______________________</p>
             <p><strong>Name:</strong> Priyansh Kalra</p>
-            <p><strong>Roll No:</strong> 2401920100XXX</p>
+            <p><strong>Roll No:</strong> 2401920100438</p>
             <p class="text-xs text-slate-500">2nd Year, B.Tech CSE</p>
           </div>
           <div>
             <p class="mb-6">Signature: _______________________</p>
             <p><strong>Name:</strong> Priyam Tripathi</p>
-            <p><strong>Roll No:</strong> 2401920100XXX</p>
+            <p><strong>Roll No:</strong> 2401920100437</p>
             <p class="text-xs text-slate-500">2nd Year, B.Tech CSE</p>
           </div>
         </div>
@@ -215,10 +274,10 @@
       <p class="text-justify text-lg leading-relaxed mb-6" contenteditable="true">
         This is to certify that the Mini Project report entitled 
         <strong>“Personal Budget & Expense Splitter (SmartSplit)”</strong> done by 
-        <strong>Pratibha Singh</strong>, 
-        <strong>Pratiksha Singh</strong>, 
-        <strong>Priyansh Kalra</strong>, and 
-        <strong>Priyam Tripathi</strong> (2nd Year, B.Tech CSE - <strong>Group Number: 7</strong>) is an authentic and original work carried out by them in the Department of Computer Science & Engineering, <strong>G.L. Bajaj Institute of Technology & Management, Greater Noida</strong> under my supervision and guidance.
+        <strong>Pratibha Singh</strong> (Roll No: 2401920100419), 
+        <strong>Pratiksha Singh</strong> (Roll No: 2401920100422), 
+        <strong>Priyansh Kalra</strong> (Roll No: 2401920100438), and 
+        <strong>Priyam Tripathi</strong> (Roll No: 2401920100437) (2nd Year, B.Tech CSE - <strong>Group Number: 7</strong>) is an authentic and original work carried out by them in the Department of Computer Science & Engineering, <strong>G.L. Bajaj Institute of Technology & Management, Greater Noida</strong> under my supervision and guidance.
       </p>
 
       <p class="text-justify text-lg leading-relaxed mb-8" contenteditable="true">
@@ -228,7 +287,7 @@
       <div class="mt-28 flex justify-between items-end">
         <div>
           <p class="mb-12">_________________________________</p>
-          <p class="font-bold text-lg">Dr. Nikhil Sharma</p>
+          <p class="font-bold text-lg">Mr. Abhijeet Gupta</p>
           <p class="text-sm text-slate-700">Project Guide / Coordinator</p>
           <p class="text-xs text-slate-500">Assistant Professor, Department of CSE</p>
         </div>
@@ -266,7 +325,7 @@
           The merciful guidance bestowed to us by the Almighty made us stick out this project to a successful and fruitful end. We humbly pray with sincere hearts for guidance to continue forever.
         </p>
         <p>
-          We pay our deepest thanks to our project guide <strong>Dr. Nikhil Sharma</strong> who has given continuous guidance and light to us during this project. His versatile knowledge and encouraging feedback helped us in critical technical times during the span of this project.
+          We pay our deepest thanks to our project guide <strong>Mr. Abhijeet Gupta</strong> who has given continuous guidance and light to us during this project. His versatile knowledge and encouraging feedback helped us in critical technical times during the span of this project.
         </p>
         <p>
           We pay special thanks to our Head of Department <strong>Dr. Sansar Singh Chauhan</strong> who has been always present as a support and helped us in all possible ways with state-of-the-art computational infrastructure during this project.
@@ -419,7 +478,143 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- PAGE 8: CHAPTER 4 - METHODOLOGY & ALGORITHM -->
+  <!-- PAGE 8: CHAPTER 2 - LITERATURE SURVEY -->
+  <!-- ========================================== -->
+  <div class="page-container page-break flex flex-col justify-between border border-slate-200">
+    <div>
+      <div class="border-b-2 border-slate-900 pb-2 mb-6">
+        <h2 class="text-3xl font-extrabold text-slate-900">Chapter 2</h2>
+        <h3 class="text-xl font-bold text-slate-700">Literature Survey & Existing Systems</h3>
+      </div>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">2.1 Overview of Traditional Expense Tracking</h4>
+      <p class="text-justify text-base leading-relaxed mb-4" contenteditable="true">
+        Traditionally, individual and shared expenses were recorded manually in notebooks, paper receipts, or basic spreadsheet utilities such as Microsoft Excel. While spreadsheets allow custom arithmetic formulas, they lack collaborative real-time access, mobile responsiveness, automatic debt reduction graphs, and integrated digital payment triggers.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">2.2 Study of Existing Commercial Solutions</h4>
+      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
+        Modern apps like <strong>Splitwise</strong> have gained popularity for group expense tracking. However, free-tier limitations, invasive ads, 10-second forced delays between entries, and lack of direct Indian UPI QR integration create significant user friction. Banking apps (like Google Pay bill split) offer only basic equal splits and do not support ongoing multi-event ledgers or personal budget categorizations.
+      </p>
+
+      <!-- COMPARATIVE FEATURE TABLE -->
+      <div class="my-4">
+        <p class="text-xs font-bold uppercase text-slate-700 mb-2 text-center">Table 2.1: Comparative Feature Matrix of Existing vs Proposed System</p>
+        <table class="w-full text-xs border border-slate-300">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="border border-slate-300 p-2 text-left">Feature Parameter</th>
+              <th class="border border-slate-300 p-2 text-center">Manual Diary / Excel</th>
+              <th class="border border-slate-300 p-2 text-center">Splitwise (Free)</th>
+              <th class="border border-slate-300 p-2 text-center">SmartSplit (Group 7)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-semibold">Personal Budget & Analytics</td>
+              <td class="border border-slate-300 p-1.5 text-center">Manual formulas</td>
+              <td class="border border-slate-300 p-1.5 text-center text-rose-600">Not Supported</td>
+              <td class="border border-slate-300 p-1.5 text-center text-emerald-600 font-bold">✔ Fully Integrated</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-semibold">Greedy Debt Simplification</td>
+              <td class="border border-slate-300 p-1.5 text-center">Not Supported</td>
+              <td class="border border-slate-300 p-1.5 text-center">Paid Feature</td>
+              <td class="border border-slate-300 p-1.5 text-center text-emerald-600 font-bold">✔ Free & Built-in</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-semibold">Native UPI QR Payment</td>
+              <td class="border border-slate-300 p-1.5 text-center">Not Supported</td>
+              <td class="border border-slate-300 p-1.5 text-center">Limited / 3rd party</td>
+              <td class="border border-slate-300 p-1.5 text-center text-emerald-600 font-bold">✔ Dynamic QR Intent</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-semibold">User Experience Friction</td>
+              <td class="border border-slate-300 p-1.5 text-center">High effort</td>
+              <td class="border border-slate-300 p-1.5 text-center text-rose-600">Ads & Rate-limits</td>
+              <td class="border border-slate-300 p-1.5 text-center text-emerald-600 font-bold">✔ Zero Ads / Instant</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex justify-between text-base pt-6 border-t border-slate-200">
+      <div>Department of Computer Science & Engineering</div>
+      <div class="text-right text-sm italic text-slate-500">Page 5</div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PAGE 9: CHAPTER 3 - SYSTEM REQUIREMENTS & TECH STACK -->
+  <!-- ========================================== -->
+  <div class="page-container page-break flex flex-col justify-between border border-slate-200">
+    <div>
+      <div class="border-b-2 border-slate-900 pb-2 mb-6">
+        <h2 class="text-3xl font-extrabold text-slate-900">Chapter 3</h2>
+        <h3 class="text-xl font-bold text-slate-700">System Requirements & Technology Stack</h3>
+      </div>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">3.1 Hardware Specifications</h4>
+      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
+        The application is architected with modern lightweight web standards, allowing responsive operation across low-spec and high-spec systems alike:
+      </p>
+      <ul class="list-disc list-inside text-sm space-y-1 mb-4 text-slate-800" contenteditable="true">
+        <li><strong>Processor (CPU):</strong> Dual-Core Intel Core i3 / AMD Ryzen 3 (or higher).</li>
+        <li><strong>RAM:</strong> 4 GB DDR3 minimum (8 GB DDR4 recommended).</li>
+        <li><strong>Storage:</strong> 2 GB disk space for development environment.</li>
+        <li><strong>Display:</strong> 1366×768 desktop display (Responsive down to 360px mobile viewports).</li>
+      </ul>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">3.2 Software Technology Stack</h4>
+      <div class="my-3">
+        <table class="w-full text-xs border border-slate-300">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="border border-slate-300 p-2 text-left">Layer</th>
+              <th class="border border-slate-300 p-2 text-left">Technology Used</th>
+              <th class="border border-slate-300 p-2 text-left">Purpose / Functional Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Client Framework</td>
+              <td class="border border-slate-300 p-1.5">React 19 & TypeScript</td>
+              <td class="border border-slate-300 p-1.5">Component hierarchy, strict typing & virtual DOM</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Build Tool</td>
+              <td class="border border-slate-300 p-1.5">Vite v6.2</td>
+              <td class="border border-slate-300 p-1.5">Blazing fast Hot Module Replacement & bundling</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Styling System</td>
+              <td class="border border-slate-300 p-1.5">Tailwind CSS v4</td>
+              <td class="border border-slate-300 p-1.5">Utility-first responsive design & glassmorphism</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Cloud Database</td>
+              <td class="border border-slate-300 p-1.5">Google Firebase Firestore</td>
+              <td class="border border-slate-300 p-1.5">Real-time NoSQL cloud data synchronization</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Vector Graphics</td>
+              <td class="border border-slate-300 p-1.5">Lucide Icons</td>
+              <td class="border border-slate-300 p-1.5">Clean visual icons for expenses, cards & actions</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex justify-between text-base pt-6 border-t border-slate-200">
+      <div>Department of Computer Science & Engineering</div>
+      <div class="text-right text-sm italic text-slate-500">Page 7</div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PAGE 10: CHAPTER 4 - METHODOLOGY & ALGORITHM -->
   <!-- ========================================== -->
   <div class="page-container page-break flex flex-col justify-between border border-slate-200">
     <div>
@@ -467,7 +662,49 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- PAGE 9: CHAPTER 6 - RESULTS & LIVE APP SCREENSHOTS -->
+  <!-- PAGE 11: CHAPTER 5 - IMPLEMENTATION MODULES -->
+  <!-- ========================================== -->
+  <div class="page-container page-break flex flex-col justify-between border border-slate-200">
+    <div>
+      <div class="border-b-2 border-slate-900 pb-2 mb-6">
+        <h2 class="text-3xl font-extrabold text-slate-900">Chapter 5</h2>
+        <h3 class="text-xl font-bold text-slate-700">Implementation & Key Feature Modules</h3>
+      </div>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">5.1 Personal Budget & Dashboard Module</h4>
+      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
+        The dashboard centralizes individual and group finances. It presents key metrics (Total Spending, You Are Owed, You Owe, Net Balance) with category breakdowns for food, rent, travel, and utilities.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">5.2 Multi-Modal Expense Splitting Engine</h4>
+      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
+        The expense creation dialog (<code>AddExpenseModal.tsx</code>) enables three distinct splitting modes:
+      </p>
+      <ul class="list-disc list-inside text-sm space-y-1 mb-4 text-slate-800" contenteditable="true">
+        <li><strong>Equally ($1/N$):</strong> Splits total amount uniformly among all participating group members.</li>
+        <li><strong>Exact Rupee Amounts:</strong> Permits entering customized cash amounts per member with real-time balance validation.</li>
+        <li><strong>Percentages (%):</strong> Allocates custom percentages with instant 100% total validation.</li>
+      </ul>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">5.3 Dynamic UPI Intent & QR Code Generator</h4>
+      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
+        To streamline debt settlements in India, SmartSplit constructs NPCI UPI deep-links (<code>upi://pay?pa=...&am=...</code>) and renders high-contrast QR codes directly on-screen. Users scan with PhonePe, Google Pay, or Paytm to settle debts instantly without manually copying bank details.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-2">5.4 Zero-Dependency Presentation Mode</h4>
+      <p class="text-justify text-base leading-relaxed" contenteditable="true">
+        To facilitate hassle-free college viva and offline evaluation, the application provides a standalone <code>frontend-demo.html</code> file that functions fully upon double-clicking, requiring zero local servers or command line execution.
+      </p>
+    </div>
+
+    <div class="flex justify-between text-base pt-6 border-t border-slate-200">
+      <div>Department of Computer Science & Engineering</div>
+      <div class="text-right text-sm italic text-slate-500">Page 13</div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PAGE 12: CHAPTER 6 - RESULTS & LIVE APP SCREENSHOTS -->
   <!-- ========================================== -->
   <div class="page-container page-break flex flex-col justify-between border border-slate-200">
     <div>
