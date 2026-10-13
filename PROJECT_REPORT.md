@@ -14,10 +14,10 @@ in
 
 | Student Name | Roll Number | Year & Branch |
 | :--- | :--- | :--- |
-| **Pratibha Singh** | 2401920100419 | 2nd Year, B.Tech CSE |
-| **Pratiksha Singh** | 2401920100422 | 2nd Year, B.Tech CSE |
-| **Priyansh Kalra** | 2401920100438 | 2nd Year, B.Tech CSE |
-| **Priyam Tripathi** | 2401920100437 | 2nd Year, B.Tech CSE |
+| **Pratibha Singh** | 2501920100419 | 2nd Year, B.Tech CSE |
+| **Pratiksha Singh** | 2501920100422 | 2nd Year, B.Tech CSE |
+| **Priyansh Kalra** | 2501920100438 | 2nd Year, B.Tech CSE |
+| **Priyam Tripathi** | 2501920100437 | 2nd Year, B.Tech CSE |
 
 ---
 
