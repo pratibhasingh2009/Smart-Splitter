@@ -6,6 +6,8 @@
   <title>Mini Project Report - Group 7 - SmartSplit</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf for direct 1-click PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,55 +61,177 @@
       background-color: #ffffff;
     }
   </style>
-  <script>
-    // Enable full document editing everywhere smoothly
-    document.addEventListener("DOMContentLoaded", function() {
-      document.designMode = "on";
-    });
-  </script>
+  </style>
 </head>
-<body class="py-8 antialiased">
+<body class="py-8 antialiased bg-slate-100 text-slate-900">
 
   <!-- TOP ACTION TOOLBAR (DOES NOT PRINT) -->
-  <div class="no-print fixed top-4 right-6 z-50 flex items-center space-x-3 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700">
-    <div class="text-xs">
-      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-      <span class="font-medium text-slate-200">Group 7 (2nd Year)</span>
+  <div contenteditable="false" style="user-select: none;" class="no-print fixed top-3 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center justify-center gap-2 bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700 max-w-[96vw]">
+    
+    <!-- GROUP BADGE & STATUS -->
+    <div class="flex items-center space-x-2 mr-1">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="font-bold text-xs text-slate-100 tracking-wide">Group 7 (GLBITM)</span>
+      <span class="text-slate-600">|</span>
+      <span id="saveStatusBadge" class="text-[11px] font-medium text-emerald-300">✔ Auto-saved in browser</span>
     </div>
-    <div class="h-4 w-px bg-slate-700"></div>
 
-    <!-- BUTTON 1: DIRECT SAVE AS PDF (Ctrl+P) -->
-    <button onclick="handlePrintPDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+    <!-- BUTTON 1: DIRECT 1-CLICK PDF DOWNLOAD -->
+    <button id="btn-download-pdf" type="button" onclick="handleDirectPDFDownload()" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-semibold text-xs px-3.5 py-1.5 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span>1-Click PDF Download</span>
+    </button>
+
+    <!-- BUTTON 2: CHROME PRINT / SAVE AS PDF (Ctrl+P) -->
+    <button id="btn-print-pdf" type="button" onclick="handlePrintPDF()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-semibold text-xs px-3.5 py-1.5 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-      <span>1. Save as PDF</span>
+      <span>Print / Save PDF (Ctrl+P)</span>
     </button>
 
-    <!-- BUTTON 2: DOWNLOAD AS WORD (.DOC) -->
-    <button onclick="downloadAsWordDoc()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+    <!-- BUTTON 3: DOWNLOAD AS WORD (.DOC) -->
+    <button id="btn-download-doc" type="button" onclick="downloadAsWordDoc()" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      <span>2. Download Word (.doc)</span>
+      <span>Word (.doc)</span>
     </button>
 
-    <!-- BUTTON 3: SAVE EDITED HTML -->
-    <button onclick="saveEditedHTML()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
+    <!-- BUTTON 4: SAVE EDITED HTML -->
+    <button id="btn-save-html" type="button" onclick="saveEditedHTML()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow transition flex items-center space-x-1.5 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-      <span>3. Save Edited File</span>
+      <span>Save HTML File</span>
+    </button>
+
+    <!-- BUTTON 5: RESET DRAFT -->
+    <button id="btn-reset-draft" type="button" onclick="resetReportDraft()" title="Reset all edits to original template" class="text-slate-400 hover:text-rose-400 p-1.5 text-xs transition cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    </button>
+
+    <!-- BUTTON 6: HELP MODAL -->
+    <button id="btn-help" type="button" onclick="openHelpModal()" title="PDF Save Guide" class="text-slate-400 hover:text-amber-300 p-1.5 text-xs transition cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
     </button>
   </div>
 
+  <!-- FLOATING TOAST NOTIFICATION -->
+  <div id="toastNotification" class="hidden no-print fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 transition-all duration-300 flex items-center space-x-3 opacity-0 translate-y-2 max-w-md">
+    <div class="text-xl">💡</div>
+    <div id="toastMessage" class="text-xs text-slate-200">Notification</div>
+  </div>
+
+  <!-- HELP & GUIDE MODAL -->
+  <div id="printHelpModal" class="hidden no-print fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-slate-800 border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+          <span class="mr-2 text-xl">📄</span> Chrome me PDF Save Kaise Karein:
+        </h3>
+        <button onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs text-slate-700">
+        <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+          <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
+          <div>
+            <strong>Destination:</strong> Dropdown me se <strong>"Save as PDF"</strong> chunein.
+          </div>
+        </div>
+        <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+          <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
+          <div>
+            <strong>Pages:</strong> <strong>"All"</strong> select rakhein (poori report aayegi).
+          </div>
+        </div>
+        <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+          <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
+          <div>
+            <strong>More settings:</strong> <strong>"Background graphics"</strong> par checkmark (✔) karein taaki college stamp aur styling print me aayein!
+          </div>
+        </div>
+        <div class="flex items-start space-x-2.5 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
+          <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">4</span>
+          <div>
+            Neeche blue color ke <strong>"Save"</strong> button par click karein aur file save kar lein!
+          </div>
+        </div>
+      </div>
+      <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeHelpModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition">
+          Samajh Aa Gaya (OK)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    function handlePrintPDF() {
-      window.print();
+    function setSaveStatus(text, colorClass) {
+      const el = document.getElementById('saveStatusBadge');
+      if (el) {
+        el.textContent = text;
+        el.className = 'text-[11px] font-medium ' + (colorClass || 'text-slate-200');
+      }
     }
 
+    function showToast(message, duration = 4000) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      if (toast && toastMsg) {
+        toastMsg.innerHTML = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.remove('opacity-0', 'translate-y-2');
+          toast.classList.add('opacity-100', 'translate-y-0');
+        }, 10);
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          setTimeout(() => toast.classList.add('hidden'), 350);
+        }, duration);
+      }
+    }
+
+    // 1. Direct PDF Download via html2pdf
+    function handleDirectPDFDownload() {
+      showToast("⏳ <strong>PDF download generate ho raha hai...</strong> Thode seconds wait kijiye!");
+      const content = document.getElementById('report-content');
+      if (!content) return;
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [0, 0, 0, 0],
+          filename: 'SmartSplit_Project_Report_Group_7.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 1.5, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], before: '.page-break' }
+        };
+
+        html2pdf().set(opt).from(content).save().then(() => {
+          showToast("🎉 <strong>PDF download ho gaya hai!</strong> Apne Downloads folder me check karein.");
+        }).catch((err) => {
+          console.warn("Direct download error, falling back to print:", err);
+          showToast("Direct download me issue aaya, Chrome Print khul raha hai...");
+          handlePrintPDF();
+        });
+      } else {
+        handlePrintPDF();
+      }
+    }
+
+    // 2. Browser Print / Save as PDF
+    function handlePrintPDF() {
+      openHelpModal();
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // 3. Word Document Download (.doc)
     function downloadAsWordDoc() {
       const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Group 7 Project Report</title></head><body>";
       const footer = "</body></html>";
       
-      // Clone document and remove toolbar
-      const clone = document.body.cloneNode(true);
-      const toolbar = clone.querySelector('.no-print');
-      if (toolbar) toolbar.remove();
+      const content = document.getElementById('report-content');
+      if (!content) return;
+      const clone = content.cloneNode(true);
+      clone.querySelectorAll('.no-print').forEach(el => el.remove());
 
       const htmlContent = header + clone.innerHTML + footer;
       const blob = new Blob(['\ufeff', htmlContent], {
@@ -122,12 +246,13 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showToast("📄 <strong>Word file (.doc) download ho gayi hai!</strong> MS Word me open kar sakti hain.");
     }
 
+    // 4. Save Edited HTML
     function saveEditedHTML() {
-      // Save current edited document state as HTML file
       const currentHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-      const blob = new Blob([currentHTML], { type: 'text/html' });
+      const blob = new Blob([currentHTML], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -136,7 +261,25 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      alert('Aapki edited report file download ho gayi hai! 🎉');
+      showToast("💾 <strong>Aapki edited report file (.html) download ho gayi hai!</strong>");
+    }
+
+    // 5. Reset Draft
+    function resetReportDraft() {
+      if (confirm("Kya aap saare edits reset karke default template par wapas aana chahti hain?")) {
+        localStorage.removeItem('smartsplit_report_group7_draft');
+        location.reload();
+      }
+    }
+
+    function openHelpModal() {
+      const modal = document.getElementById('printHelpModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeHelpModal() {
+      const modal = document.getElementById('printHelpModal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function uploadProjectPhoto(event) {
@@ -156,15 +299,16 @@
       div.className = 'border-2 border-slate-300 rounded-xl p-3 bg-white shadow-sm my-4';
       div.innerHTML = `
         <div class="flex justify-between items-center bg-slate-100 p-2 rounded text-xs font-bold text-slate-700 mb-2">
-          <span contenteditable="true">Fig 6.x: SmartSplit Live Project Execution Screenshot (Group 7)</span>
+          <span>Fig 6.x: SmartSplit Live Project Execution Screenshot (Group 7)</span>
           <button onclick="this.closest('.border-2').remove()" class="no-print text-rose-600 hover:text-rose-800 font-bold px-2">✕ Remove</button>
         </div>
         <img src="${dataUrl}" class="w-full rounded-lg border border-slate-200 object-contain max-h-[380px]" alt="Project Screenshot" />
       `;
       gallery.appendChild(div);
+      showToast("📷 Screenshot report me add ho gaya!");
     }
 
-    // Support Ctrl+V paste of images directly into page
+    // Paste handler for screenshots
     window.addEventListener('paste', function(e) {
       const items = (e.clipboardData || e.originalEvent.clipboardData).items;
       for (let index in items) {
@@ -179,7 +323,55 @@
         }
       }
     });
+
+    // Make all pages editable and restore/save draft automatically
+    document.addEventListener("DOMContentLoaded", function() {
+      // 1. Enable editing on all page containers
+      document.querySelectorAll('.page-container').forEach(page => {
+        page.setAttribute('contenteditable', 'true');
+        page.setAttribute('spellcheck', 'false');
+      });
+
+      // 2. Check and restore saved localStorage draft
+      try {
+        const saved = localStorage.getItem('smartsplit_report_group7_draft');
+        if (saved) {
+          const contentEl = document.getElementById('report-content');
+          if (contentEl) {
+            contentEl.innerHTML = saved;
+            document.querySelectorAll('.page-container').forEach(p => {
+              p.setAttribute('contenteditable', 'true');
+              p.setAttribute('spellcheck', 'false');
+            });
+            setSaveStatus("✔ Saved Draft Restored", "text-emerald-300");
+          }
+        }
+      } catch(e) {
+        console.warn("Storage error:", e);
+      }
+
+      // 3. Auto-save on every keystroke
+      let saveTimer = null;
+      const reportContent = document.getElementById('report-content');
+      if (reportContent) {
+        reportContent.addEventListener('input', function() {
+          setSaveStatus("Saving...", "text-amber-300");
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(() => {
+            try {
+              localStorage.setItem('smartsplit_report_group7_draft', reportContent.innerHTML);
+              setSaveStatus("✔ All changes saved in browser", "text-emerald-300");
+            } catch(e) {
+              console.warn(e);
+            }
+          }, 400);
+        });
+      }
+    });
   </script>
+
+  <!-- WRAPPER FOR ALL REPORT PAGES -->
+  <div id="report-content" class="w-full">
 
   <!-- ========================================== -->
   <!-- PAGE 1: TITLE PAGE (COVER) -->
@@ -859,5 +1051,6 @@
     </div>
   </div>
 
+  </div> <!-- END OF #report-content -->
 </body>
 </html>

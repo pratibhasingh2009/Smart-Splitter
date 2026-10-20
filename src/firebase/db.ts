@@ -196,90 +196,150 @@ export const deleteRecurringFromFirestore = async (id: string) => {
   }
 };
 
-// --- REAL-TIME LISTENERS ---
-export const subscribeToUsers = (callback: (users: User[]) => void) => {
-  return onSnapshot(collection(db, USERS_COLLECTION), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as User);
-    callback(data);
-  }, (error) => {
-    console.warn('Firestore Users subscription error (falling back to local):', error);
-  });
+// --- REAL-TIME LISTENERS (Scoped & Robust) ---
+export const subscribeToUsers = (
+  callback: (users: User[]) => void,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(
+    collection(db, USERS_COLLECTION),
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => doc.data() as User);
+      callback(data);
+    },
+    (error) => {
+      console.warn('Firestore Users subscription error:', error);
+      onError?.(error);
+    }
+  );
 };
 
-export const subscribeToGroups = (callback: (groups: Group[]) => void) => {
-  return onSnapshot(collection(db, GROUPS_COLLECTION), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as Group);
-    callback(data);
-  }, (error) => {
-    console.warn('Firestore Groups subscription error (falling back to local):', error);
-  });
+export const subscribeToGroups = (
+  callback: (groups: Group[]) => void,
+  userId?: string,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(
+    collection(db, GROUPS_COLLECTION),
+    (snapshot) => {
+      let data = snapshot.docs.map((doc) => doc.data() as Group);
+      if (userId) {
+        data = data.filter((g) => g.members?.includes(userId));
+      }
+      callback(data);
+    },
+    (error) => {
+      console.warn('Firestore Groups subscription error:', error);
+      onError?.(error);
+    }
+  );
 };
 
-export const subscribeToExpenses = (callback: (expenses: Expense[]) => void) => {
-  return onSnapshot(collection(db, EXPENSES_COLLECTION), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as Expense);
-    // Sort descending by creation / date
-    data.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
-    callback(data);
-  }, (error) => {
-    console.warn('Firestore Expenses subscription error (falling back to local):', error);
-  });
+export const subscribeToExpenses = (
+  callback: (expenses: Expense[]) => void,
+  userId?: string,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(
+    collection(db, EXPENSES_COLLECTION),
+    (snapshot) => {
+      let data = snapshot.docs.map((doc) => doc.data() as Expense);
+      if (userId) {
+        data = data.filter(
+          (e) =>
+            e.paidBy === userId ||
+            e.splits?.some((s) => s.memberId === userId)
+        );
+      }
+      // Sort descending by creation / date
+      data.sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date).getTime() -
+          new Date(a.createdAt || a.date).getTime()
+      );
+      callback(data);
+    },
+    (error) => {
+      console.warn('Firestore Expenses subscription error:', error);
+      onError?.(error);
+    }
+  );
 };
 
-export const subscribeToSettlements = (callback: (settlements: SettlementRecord[]) => void) => {
-  return onSnapshot(collection(db, SETTLEMENTS_COLLECTION), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as SettlementRecord);
-    data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    callback(data);
-  }, (error) => {
-    console.warn('Firestore Settlements subscription error (falling back to local):', error);
-  });
+export const subscribeToSettlements = (
+  callback: (settlements: SettlementRecord[]) => void,
+  userId?: string,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(
+    collection(db, SETTLEMENTS_COLLECTION),
+    (snapshot) => {
+      let data = snapshot.docs.map((doc) => doc.data() as SettlementRecord);
+      if (userId) {
+        data = data.filter((s) => s.fromId === userId || s.toId === userId);
+      }
+      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      callback(data);
+    },
+    (error) => {
+      console.warn('Firestore Settlements subscription error:', error);
+      onError?.(error);
+    }
+  );
 };
 
-export const subscribeToRecurring = (callback: (recurring: RecurringExpense[]) => void) => {
-  return onSnapshot(collection(db, RECURRING_COLLECTION), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as RecurringExpense);
-    callback(data);
-  }, (error) => {
-    console.warn('Firestore Recurring subscription error (falling back to local):', error);
-  });
+export const subscribeToRecurring = (
+  callback: (recurring: RecurringExpense[]) => void,
+  userId?: string,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(
+    collection(db, RECURRING_COLLECTION),
+    (snapshot) => {
+      let data = snapshot.docs.map((doc) => doc.data() as RecurringExpense);
+      if (userId) {
+        data = data.filter(
+          (r) =>
+            r.paidBy === userId ||
+            r.splits?.some((s) => s.memberId === userId)
+        );
+      }
+      callback(data);
+    },
+    (error) => {
+      console.warn('Firestore Recurring subscription error:', error);
+      onError?.(error);
+    }
+  );
 };
 
-// --- SEED INITIAL DATA IF FIRESTORE IS EMPTY ---
-export const seedInitialFirestoreData = async (
-  initialUsers: User[],
-  initialGroups: Group[],
-  initialExpenses: Expense[],
-  initialSettlements: SettlementRecord[],
-  initialRecurring: RecurringExpense[]
+// Explicit demo-seeding helper (NEVER invoked automatically on new user registration)
+export const seedDemoDataToFirestore = async (
+  demoUsers: User[],
+  demoGroups: Group[],
+  demoExpenses: Expense[],
+  demoSettlements: SettlementRecord[],
+  demoRecurring: RecurringExpense[]
 ) => {
   try {
-    const usersSnap = await getDocs(collection(db, USERS_COLLECTION));
-    if (usersSnap.empty) {
-      console.log('Seeding initial data to Firestore...');
-      // Seed users
-      for (const u of initialUsers) {
-        await setDoc(doc(db, USERS_COLLECTION, u.id), u);
-      }
-      // Seed groups
-      for (const g of initialGroups) {
-        await setDoc(doc(db, GROUPS_COLLECTION, g.id), g);
-      }
-      // Seed expenses
-      for (const e of initialExpenses) {
-        await setDoc(doc(db, EXPENSES_COLLECTION, e.id), e);
-      }
-      // Seed settlements
-      for (const s of initialSettlements) {
-        await setDoc(doc(db, SETTLEMENTS_COLLECTION, s.id), s);
-      }
-      // Seed recurring
-      for (const r of initialRecurring) {
-        await setDoc(doc(db, RECURRING_COLLECTION, r.id), r);
-      }
-      console.log('Initial data seeded successfully to Firestore!');
+    for (const u of demoUsers) {
+      await setDoc(doc(db, USERS_COLLECTION, u.id), sanitizeFirestoreData(u), { merge: true });
     }
+    for (const g of demoGroups) {
+      await setDoc(doc(db, GROUPS_COLLECTION, g.id), sanitizeFirestoreData(g), { merge: true });
+    }
+    for (const e of demoExpenses) {
+      await setDoc(doc(db, EXPENSES_COLLECTION, e.id), sanitizeFirestoreData(e), { merge: true });
+    }
+    for (const s of demoSettlements) {
+      await setDoc(doc(db, SETTLEMENTS_COLLECTION, s.id), sanitizeFirestoreData(s), { merge: true });
+    }
+    for (const r of demoRecurring) {
+      await setDoc(doc(db, RECURRING_COLLECTION, r.id), sanitizeFirestoreData(r), { merge: true });
+    }
+    return true;
   } catch (error) {
-    console.warn('Could not seed initial data to Firestore:', error);
+    console.error('Failed to seed demo data to Firestore:', error);
+    throw error;
   }
 };

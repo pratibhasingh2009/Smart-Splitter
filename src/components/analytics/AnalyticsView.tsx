@@ -38,16 +38,56 @@ export const AnalyticsView: React.FC = () => {
 
   let accumulatedPercent = 0;
 
-  // Monthly breakdown simulation
-  const monthlyData = [
-    { month: 'Jan', amount: 4200 },
-    { month: 'Feb', amount: 5800 },
-    { month: 'Mar', amount: 6100 },
-    { month: 'Apr', amount: 7500 },
-    { month: 'May (Current)', amount: total || 8450, current: true },
-  ];
+  // Real chronological monthly aggregation from permitted expenses
+  const relevantExpenses = filterScope === 'my_share'
+    ? expenses.filter(e => e.splits?.some(s => s.memberId === currentUser.id))
+    : expenses;
 
-  const maxMonthAmount = Math.max(...monthlyData.map(m => m.amount));
+  // Group by Month (last 6 calendar months based on actual expense dates)
+  const monthlyTotalsMap: Record<string, number> = {};
+  const monthLabels: { key: string; label: string }[] = [];
+  const now = new Date();
+
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const monthName = d.toLocaleDateString('en-US', { month: 'short' });
+    const isCurrent = i === 0;
+    monthLabels.push({
+      key,
+      label: isCurrent ? `${monthName} (Current)` : monthName,
+    });
+    monthlyTotalsMap[key] = 0;
+  }
+
+  relevantExpenses.forEach(exp => {
+    if (!exp.date) return;
+    const expKey = exp.date.substring(0, 7); // 'YYYY-MM'
+    const shareAmount = filterScope === 'my_share'
+      ? (exp.splits?.find(s => s.memberId === currentUser.id)?.amount || 0)
+      : exp.amount;
+
+    if (monthlyTotalsMap[expKey] !== undefined) {
+      monthlyTotalsMap[expKey] += shareAmount;
+    } else {
+      monthlyTotalsMap[expKey] = (monthlyTotalsMap[expKey] || 0) + shareAmount;
+    }
+  });
+
+  const monthlyData = monthLabels.map(m => ({
+    month: m.label,
+    amount: Math.round(monthlyTotalsMap[m.key] || 0),
+    current: m.label.includes('Current'),
+  }));
+
+  const maxMonthAmount = Math.max(...monthlyData.map(m => m.amount), 1);
+
+  // Previous month comparison
+  const currentMonthAmount = monthlyData[monthlyData.length - 1]?.amount || 0;
+  const prevMonthAmount = monthlyData[monthlyData.length - 2]?.amount || 0;
+  const monthDiffPercent = prevMonthAmount > 0
+    ? Math.round(((currentMonthAmount - prevMonthAmount) / prevMonthAmount) * 100)
+    : 0;
 
   return (
     <div id="analytics-page-view" className="space-y-6 pb-12 animate-in fade-in duration-200">
@@ -227,39 +267,55 @@ export const AnalyticsView: React.FC = () => {
               <h3 className="font-extrabold text-lg text-slate-800 tracking-tight">
                 Monthly Spending Trend
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
-                +12% vs Apr
-              </span>
+              {prevMonthAmount > 0 ? (
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  monthDiffPercent >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {monthDiffPercent >= 0 ? `+${monthDiffPercent}%` : `${monthDiffPercent}%`} vs prev month
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                  {total > 0 ? 'Active Period' : 'No Data Yet'}
+                </span>
+              )}
             </div>
 
             {/* Bar Chart Visualizer */}
-            <div className="h-48 flex items-end justify-between gap-4 pt-6 pb-2 px-2 border-b border-slate-100">
-              {monthlyData.map(m => {
-                const heightPercent = Math.round((m.amount / maxMonthAmount) * 100);
-                return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-2 group">
-                    <span className="text-[11px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {formatCurrency(m.amount, currency)}
-                    </span>
-                    <div
-                      className={`w-full max-w-[42px] rounded-2xl transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
-                        m.current
-                          ? 'bg-gradient-to-t from-[#145DA0] to-[#1E88E5] shadow-md shadow-blue-500/20'
-                          : 'bg-slate-200 group-hover:bg-slate-300'
-                      }`}
-                      style={{ height: `${heightPercent}%` }}
-                    />
-                    <span
-                      className={`text-xs font-bold ${
-                        m.current ? 'text-[#145DA0]' : 'text-slate-400'
-                      }`}
-                    >
-                      {m.month.split(' ')[0]}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            {total === 0 ? (
+              <div className="h-48 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 rounded-2xl">
+                <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
+                <p className="text-xs font-bold text-slate-600">No expenses recorded yet</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Add an expense to view real-time monthly trends</p>
+              </div>
+            ) : (
+              <div className="h-48 flex items-end justify-between gap-4 pt-6 pb-2 px-2 border-b border-slate-100">
+                {monthlyData.map(m => {
+                  const heightPercent = Math.max(8, Math.round((m.amount / maxMonthAmount) * 100));
+                  return (
+                    <div key={m.month} className="flex-1 flex flex-col items-center gap-2 group">
+                      <span className="text-[11px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {formatCurrency(m.amount, currency)}
+                      </span>
+                      <div
+                        className={`w-full max-w-[42px] rounded-2xl transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
+                          m.current
+                            ? 'bg-gradient-to-t from-[#145DA0] to-[#1E88E5] shadow-md shadow-blue-500/20'
+                            : 'bg-slate-200 group-hover:bg-slate-300'
+                        }`}
+                        style={{ height: m.amount > 0 ? `${heightPercent}%` : '6px' }}
+                      />
+                      <span
+                        className={`text-xs font-bold ${
+                          m.current ? 'text-[#145DA0]' : 'text-slate-400'
+                        }`}
+                      >
+                        {m.month.split(' ')[0]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Smart Insights & Advice Box */}
             <div className="mt-6 p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
@@ -270,8 +326,11 @@ export const AnalyticsView: React.FC = () => {
                 </h4>
               </div>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Your shared expenses increased by 12% in May due to trip bookings and dining. You saved approx{' '}
-                <strong className="text-emerald-700 font-bold">{formatCurrency(4800, currency)}</strong> by splitting equally rather than paying individually!
+                {total > 0
+                  ? `Your recorded shared spending stands at ${formatCurrency(total, currency)} with ${expenses.length} transaction(s). ${
+                      highestCategory ? `Top category is ${highestCategory.label} (${highestCategory.percentage}%).` : ''
+                    }`
+                  : 'Start by creating a group and adding shared or personal bills. SmartSplit will generate live optimization insights.'}
               </p>
             </div>
           </div>

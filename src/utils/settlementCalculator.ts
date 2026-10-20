@@ -32,14 +32,15 @@ export interface NetBalances {
 }
 
 /**
- * Calculates net balance for every member based on expenses and settlements
+ * Calculates net balance for every member based on expenses and settlements.
+ * Uses integer paise / cents internally to avoid IEEE 754 floating point drift.
  */
 export function calculateNetBalances(
   expenses: Expense[],
   settlements: SettlementRecord[] = [],
   groupId?: string
 ): NetBalances {
-  const balances: NetBalances = {};
+  const balancesInCents: Record<string, number> = {};
 
   const filteredExpenses = groupId
     ? expenses.filter(e => e.groupId === groupId)
@@ -51,23 +52,40 @@ export function calculateNetBalances(
 
   // Process Expenses
   filteredExpenses.forEach(expense => {
-    // Payer gets credit
-    balances[expense.paidBy] = (balances[expense.paidBy] || 0) + expense.amount;
+    if (!expense || typeof expense.amount !== 'number' || isNaN(expense.amount)) return;
+    const expensePayer = expense.paidBy;
+    if (!expensePayer) return;
+
+    const totalCents = Math.round(expense.amount * 100);
+    balancesInCents[expensePayer] = (balancesInCents[expensePayer] || 0) + totalCents;
 
     // Participants get debited for their share
-    expense.splits.forEach(split => {
-      balances[split.memberId] = (balances[split.memberId] || 0) - split.amount;
-    });
+    if (Array.isArray(expense.splits)) {
+      expense.splits.forEach(split => {
+        if (!split || !split.memberId) return;
+        const splitCents = Math.round((Number(split.amount) || 0) * 100);
+        balancesInCents[split.memberId] = (balancesInCents[split.memberId] || 0) - splitCents;
+      });
+    }
   });
 
   // Process Settlements already completed
   filteredSettlements.forEach(settlement => {
+    if (!settlement || !settlement.fromId || !settlement.toId) return;
     const amt = Number(settlement.amount);
-    if (!amt || isNaN(amt) || !settlement.fromId || !settlement.toId) return;
-    // fromId paid money to toId, so fromId's debt is reduced (credited)
-    balances[settlement.fromId] = (balances[settlement.fromId] || 0) + amt;
-    // toId received money, so toId's credit is reduced (debited)
-    balances[settlement.toId] = (balances[settlement.toId] || 0) - amt;
+    if (!amt || isNaN(amt) || amt <= 0) return;
+
+    const settlementCents = Math.round(amt * 100);
+    // fromId paid money to toId, so fromId's liability is reduced (credited)
+    balancesInCents[settlement.fromId] = (balancesInCents[settlement.fromId] || 0) + settlementCents;
+    // toId received money, so toId's receivable is reduced (debited)
+    balancesInCents[settlement.toId] = (balancesInCents[settlement.toId] || 0) - settlementCents;
+  });
+
+  // Convert back to standard currency units (e.g. Rupee, Dollar) rounded to 2 decimals
+  const balances: NetBalances = {};
+  Object.entries(balancesInCents).forEach(([userId, cents]) => {
+    balances[userId] = cents / 100;
   });
 
   return balances;
@@ -77,6 +95,7 @@ export function calculateNetBalances(
  * SMART SETTLEMENT ALGORITHM:
  * Minimizes the total number of peer-to-peer cash transfer transactions
  * using a Greedy Net Balance reduction graph.
+ * Guarantees at most (N - 1) transactions for N active balance holders.
  */
 export function calculateSmartSettlements(
   expenses: Expense[],
@@ -86,22 +105,22 @@ export function calculateSmartSettlements(
   const balances = calculateNetBalances(expenses, settlements, groupId);
   const transactions: SettlementTransaction[] = [];
 
-  // Round balances to avoid float precision bugs
-  const debtors: { userId: string; amount: number }[] = [];
-  const creditors: { userId: string; amount: number }[] = [];
+  // Work with integer cents to ensure exact rounding with zero drift
+  const debtors: { userId: string; cents: number }[] = [];
+  const creditors: { userId: string; cents: number }[] = [];
 
   Object.entries(balances).forEach(([userId, net]) => {
-    const roundedNet = Math.round(net * 100) / 100;
-    if (roundedNet < -0.5) {
-      debtors.push({ userId, amount: -roundedNet }); // amount owed (positive)
-    } else if (roundedNet > 0.5) {
-      creditors.push({ userId, amount: roundedNet }); // amount to receive
+    const netCents = Math.round(net * 100);
+    if (netCents < -50) { // More than 50 paise debt
+      debtors.push({ userId, cents: -netCents });
+    } else if (netCents > 50) { // More than 50 paise receivable
+      creditors.push({ userId, cents: netCents });
     }
   });
 
   // Sort descending by amount to maximize greediness
-  debtors.sort((a, b) => b.amount - a.amount);
-  creditors.sort((a, b) => b.amount - a.amount);
+  debtors.sort((a, b) => b.cents - a.cents);
+  creditors.sort((a, b) => b.cents - a.cents);
 
   let dIdx = 0;
   let cIdx = 0;
@@ -110,8 +129,8 @@ export function calculateSmartSettlements(
     const debtor = debtors[dIdx];
     const creditor = creditors[cIdx];
 
-    const settledAmount = Math.min(debtor.amount, creditor.amount);
-    const roundedAmount = Math.round(settledAmount);
+    const settledCents = Math.min(debtor.cents, creditor.cents);
+    const roundedAmount = Math.round(settledCents / 100);
 
     if (roundedAmount > 0) {
       transactions.push({
@@ -123,13 +142,13 @@ export function calculateSmartSettlements(
       });
     }
 
-    debtor.amount -= settledAmount;
-    creditor.amount -= settledAmount;
+    debtor.cents -= settledCents;
+    creditor.cents -= settledCents;
 
-    if (debtor.amount < 0.5) {
+    if (debtor.cents < 50) {
       dIdx++;
     }
-    if (creditor.amount < 0.5) {
+    if (creditor.cents < 50) {
       cIdx++;
     }
   }

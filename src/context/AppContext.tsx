@@ -43,8 +43,10 @@ import {
   subscribeToSettlements,
   subscribeToRecurring,
   subscribeToGroupMessages,
-  seedInitialFirestoreData,
+  seedDemoDataToFirestore,
 } from '../firebase/db';
+import { auth } from '../firebase/config';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 interface SettleModalState {
   isOpen: boolean;
@@ -57,6 +59,9 @@ interface SettleModalState {
 interface AppContextType {
   currentUser: User;
   isAuthenticated: boolean;
+  isDemoMode: boolean;
+  authLoading: boolean;
+  authError: string | null;
   currentView: PageView;
   selectedGroupId: string | null;
   currency: CurrencyCode;
@@ -79,9 +84,10 @@ interface AppContextType {
 
   // Navigation & Auth Actions
   setCurrentView: (view: PageView, groupId?: string) => void;
-  login: (email: string) => boolean;
+  login: (email: string, password?: string) => Promise<boolean>;
+  loginAsDemo: (demoEmail?: string) => void;
   loginWithQR: (qrData: string) => boolean;
-  register: (name: string, email: string) => boolean;
+  register: (name: string, email: string, password?: string) => Promise<boolean>;
   logout: () => void;
   switchUser: (userId: string) => void;
   setCurrency: (c: CurrencyCode) => void;
@@ -247,15 +253,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // --- Real-time Cloud Synchronization (Firebase Firestore) ---
   useEffect(() => {
-    // Seed initial collections in Firestore if needed
-    seedInitialFirestoreData(
-      INITIAL_USERS,
-      INITIAL_GROUPS,
-      INITIAL_EXPENSES,
-      INITIAL_SETTLEMENTS,
-      INITIAL_RECURRING
-    );
-
     // Subscribe to Firestore collections
     const unsubUsers = subscribeToUsers((cloudUsers) => {
       if (cloudUsers && cloudUsers.length > 0) {
