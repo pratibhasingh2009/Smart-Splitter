@@ -138,7 +138,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-2.5">
           {/* User Flow & Architecture Button */}
           <button
             id="btn-view-user-flow"
@@ -146,10 +146,10 @@ export const Sidebar: React.FC = () => {
               openFlowModal();
               setIsSidebarOpen(false);
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition-all shadow-sm"
           >
-            <GitBranch className="w-4 h-4 text-[#F5B942]" />
-            <span>View Page Flow & Guide</span>
+            <GitBranch className="w-4 h-4 text-white/80" />
+            <span>Architecture & Flow</span>
           </button>
 
           {/* Logout Action */}

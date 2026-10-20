@@ -127,8 +127,8 @@ export const UserFlowModal: React.FC = () => {
         </div>
 
         {/* Steps Grid */}
-        <div className="p-6 overflow-y-auto max-h-[75vh] space-y-3">
-          <p className="text-xs text-slate-500 font-semibold mb-4">
+        <div className="p-6 overflow-y-auto max-h-[75vh] space-y-4">
+          <p className="text-xs text-slate-500 font-semibold">
             Click on any page below to jump straight into that view:
           </p>
 

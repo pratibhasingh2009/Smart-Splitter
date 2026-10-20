@@ -18,14 +18,14 @@ import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/settlementCalculator';
 
 export const LandingPage: React.FC = () => {
-  const { setCurrentView, login, currency, openFlowModal } = useApp();
+  const { setCurrentView, loginAsDemo, currency, openFlowModal } = useApp();
 
   // Mini live demo calculator on landing page
   const [demoAmount, setDemoAmount] = useState<number>(3000);
   const [demoPeople, setDemoPeople] = useState<number>(3);
 
   const handleLaunchDemo = () => {
-    login('pratibha@gmail.com');
+    loginAsDemo('pratibha@gmail.com');
   };
 
   return (
@@ -85,11 +85,11 @@ export const LandingPage: React.FC = () => {
         </p>
 
         {/* Hero CTAs */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
+        <div className="flex flex-col sm:flex-row items-center gap-3.5 mt-8">
           <button
             id="btn-hero-launch-demo"
             onClick={handleLaunchDemo}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#1E88E5] hover:bg-[#145DA0] text-white font-black text-base shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-[#1E88E5] hover:bg-[#145DA0] text-white font-black text-sm sm:text-base shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <span>Explore Live Dashboard Demo</span>
             <ArrowRight className="w-5 h-5" />
@@ -98,7 +98,7 @@ export const LandingPage: React.FC = () => {
           <button
             id="btn-hero-create-acc"
             onClick={() => setCurrentView('register')}
-            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm shadow-sm transition-all"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm shadow-sm transition-all"
           >
             Create Free Account
           </button>

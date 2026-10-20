@@ -27,7 +27,19 @@ const AppContent: React.FC = () => {
     closeAddExpenseModal,
     editingExpense,
     isAuthenticated,
+    authLoading,
   } = useApp();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F3F8FF] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-[#145DA0] flex items-center justify-center text-white shadow-lg animate-pulse mb-4">
+          <span className="font-black text-xl">₹</span>
+        </div>
+        <p className="text-sm font-bold text-slate-700">Loading Personal Budget Splitter...</p>
+      </div>
+    );
+  }
 
   // If user is not authenticated or is viewing unauthenticated views:
   if (!isAuthenticated) {

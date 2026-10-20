@@ -32,6 +32,8 @@ export const Header: React.FC = () => {
     isSidebarOpen,
     toggleSidebar,
     setIsSidebarOpen,
+    isDemoMode,
+    isCloudSynced,
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -239,7 +241,15 @@ export const Header: React.FC = () => {
             />
             <div className="text-left hidden sm:block">
               <p className="text-xs font-bold text-slate-800 leading-none">{currentUser.name}</p>
-              <span className="text-[10px] text-slate-400 font-medium">Member</span>
+              {isDemoMode ? (
+                <span className="text-[9px] text-amber-700 font-extrabold bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
+                  Demo Sandbox
+                </span>
+              ) : (
+                <span className="text-[9px] text-emerald-700 font-extrabold bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                  Cloud Synced
+                </span>
+              )}
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 ml-0.5" />
           </button>
@@ -253,10 +263,27 @@ export const Header: React.FC = () => {
                   className="w-10 h-10 rounded-xl object-cover ring-2 ring-[#1E88E5]"
                 />
                 <div className="overflow-hidden">
-                  <p className="font-bold text-xs text-slate-800 truncate">{currentUser.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-xs text-slate-800 truncate">{currentUser.name}</p>
+                    {isDemoMode && (
+                      <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-1.5 py-0.2 rounded">
+                        DEMO
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
                 </div>
               </div>
+
+              {isDemoMode ? (
+                <div className="mx-2 mb-2 p-2 rounded-xl bg-amber-50/80 border border-amber-200 text-[10px] text-amber-800 font-medium">
+                  ⚡ <strong>Demo Mode active:</strong> Changes remain in local browser sandbox. Log out to sign up for cloud sync.
+                </div>
+              ) : (
+                <div className="mx-2 mb-2 p-2 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[10px] text-emerald-800 font-medium">
+                  ✓ <strong>Firebase Authenticated:</strong> Your personal expenses & groups are secured in Firestore.
+                </div>
+              )}
 
               {/* Perspective Switcher Section */}
               <div className="px-2 py-1.5">

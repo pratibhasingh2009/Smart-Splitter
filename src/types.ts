@@ -22,6 +22,8 @@ export interface User {
   upiId?: string;
   monthlyBudget?: number;
   currency?: CurrencyCode;
+  createdBy?: string;
+  isDemo?: boolean;
 }
 
 export interface GroupNote {
@@ -55,6 +57,7 @@ export interface Expense {
   category: ExpenseCategory;
   splitMode: SplitMode;
   splits: SplitDetail[];
+  memberIds?: string[];
   notes?: string;
   receiptUrl?: string;
   receiptType?: 'image' | 'pdf';
@@ -86,6 +89,7 @@ export interface Group {
   members: string[]; // User IDs
   budget?: number;
   notes?: GroupNote[];
+  createdBy?: string;
   createdAt: string;
 }
 
@@ -107,6 +111,7 @@ export interface SettlementRecord {
   groupId?: string;
   method?: 'cash' | 'upi' | 'bank_transfer' | 'other';
   notes?: string;
+  participantIds?: string[];
 }
 
 export interface RecurringExpense {
@@ -118,6 +123,7 @@ export interface RecurringExpense {
   paidBy: string;
   splitMode: SplitMode;
   splits: SplitDetail[];
+  memberIds?: string[];
   frequency: 'weekly' | 'monthly' | 'yearly';
   nextDueDate: string;
   status: 'active' | 'paused';

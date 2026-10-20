@@ -361,33 +361,39 @@ SmartSplit bridges these gaps by combining personal budget management and group 
 | **Language** | TypeScript | v5.x | Strict type safety, interface contract enforcement |
 | **Build Tool** | Vite | v6.2.3 | Extremely fast Hot Module Replacement (HMR) and optimized esbuild bundle |
 | **CSS Styling** | Tailwind CSS | v4.1.14 | Utility-first, purge-optimized, highly responsive design system |
-| **Database & Auth** | Google Firebase Firestore | v12.18.0 | NoSQL document-based cloud storage with real-time listeners |
+| **Authentication** | Firebase Auth | v12.18.0 | `createUserWithEmailAndPassword`, `signInWithEmailAndPassword`, `signOut`, session listeners |
+| **Cloud Database** | Firebase Cloud Firestore | v12.18.0 | Document NoSQL cloud storage with real-time `onSnapshot` subscriptions |
+| **Database Security** | Firestore Security Rules | Version 2 | Owner and group-member role-based access control (deny-by-default) |
+| **Media & Hardware API** | Web MediaDevices API | HTML5 Native | Camera video capture (`getUserMedia`) and Canvas frame extraction |
+| **File Processing** | HTML5 FileReader API | Native Browser | Receipt photo and PDF attachment encoding to DataURL |
 | **Icons & Visuals** | Lucide-React | v0.546.0 | Clean, lightweight vector SVG iconography |
-| **Code Editor** | Visual Studio Code | v1.90+ | Industry-standard IDE with debugging and terminal integration |
+| **Deployment & Host** | Google Cloud Run / Vercel | Production Cloud | Global low-latency CDN and containerized deployment |
+| **Version Control** | Git & GitHub | Distributed VCS | Collaborative source code version control and pull request review |
 
 ---
 
 ### **3.3 Frontend Architecture (React 19 + TypeScript + Vite)**
 SmartSplit is architected as a **Single Page Application (SPA)**. React 19 provides modular component hierarchies, separating concerns across:
-- **State Management:** Custom React Context providers (`AppContext`) manage global state, user profiles, active groups, expense records, and currency settings.
-- **Strict Typing:** TypeScript interfaces (`Expense`, `Group`, `User`, `SettlementRecord`, `SplitDetail`) prevent runtime exceptions and null reference errors.
-- **Fast Build Times:** Vite compiles TypeScript and JSX on demand using native ES modules, ensuring instant development server startup (<300ms).
+- **State Management:** Custom React Context providers (`AppContext.tsx`) manage global state, active Firebase user profiles, authenticated groups, expense records, group chats, and currency settings.
+- **Strict Typing:** TypeScript interfaces defined in `src/types.ts` (`Expense`, `Group`, `User`, `GroupChatMessage`, `SettlementRecord`, `SplitDetail`) guarantee compile-time safety and eliminate runtime null-pointer exceptions.
+- **Fast Build Times:** Vite compiles TypeScript and JSX on demand using native ES modules, ensuring instant development server startup (<300ms) and tree-shaken production bundles.
 
 ---
 
 ### **3.4 Styling Framework (Tailwind CSS v4)**
 Rather than writing traditional monolithic CSS stylesheets, SmartSplit uses **Tailwind CSS**. This provides:
 - Adaptive layouts via mobile-first breakpoints (`sm:`, `md:`, `lg:`, `xl:`).
-- Consistent color palettes adhering to accessible contrast guidelines (Indigo for primary actions, Emerald for credits, Rose for debts).
-- Glassmorphic backdrop filters (`backdrop-blur-md`) and subtle shadow hierarchies for modern UI presentation.
+- Consistent color palettes adhering to accessible contrast guidelines (Dark Slate/Deep Blue for primary actions, Emerald for credits, Rose for debts).
+- Glassmorphic backdrop filters (`backdrop-blur-md`) and subtle shadow hierarchies for clean financial dashboard presentation.
 
 ---
 
-### **3.5 Backend & Cloud Persistence (Firebase Firestore)**
-Data persistence is handled by **Google Cloud Firebase Firestore**, a scalable NoSQL cloud database:
-- **Hierarchical Collections:** Structured into `/users`, `/groups`, `/expenses`, and `/settlements`.
-- **Atomic Operations:** Ensures consistent updates across shared ledgers when new transactions or payments are recorded.
-- **Offline Fallbacks:** Includes local storage cache adapters so the application functions seamlessly even during network interruptions.
+### **3.5 Backend & Cloud Persistence (Firebase Firestore & Auth)**
+Data persistence and security are handled by **Google Firebase Cloud Infrastructure**:
+- **Authentication:** Pure client-side email/password authentication using standard Firebase methods. Local arrays or mock bypasses are strictly segregated.
+- **Hierarchical Collections:** Structured into `/users`, `/groups`, `/expenses`, `/settlements`, and `/chatMessages`.
+- **Real-time Subscriptions:** Using Firestore's `onSnapshot` API, updates to group expenses or incoming group chat messages sync instantly across all members' active screens without manual page reloads.
+- **Firestore Security Rules:** Server-side rules enforce that only authenticated users whose Firebase UID is listed in the group's `members` array can read or write documents. Unauthenticated access is completely blocked (deny-by-default).
 
 ---
 \pagebreak
@@ -396,30 +402,33 @@ Data persistence is handled by **Google Cloud Firebase Firestore**, a scalable N
 
 ### **4.1 Overall System Architecture**
 SmartSplit adopts a layered, 3-tier client-server architectural model consisting of:
-1. **Presentation Layer (Client):** Responsive React SPA rendering dashboards, modals, expense tables, and dynamic charts.
-2. **Logic & Algorithmic Layer (Engine):** Business logic executing net balance aggregation, currency formatting, split calculations, and debt simplification.
-3. **Persistence Layer (Cloud / Local):** Firebase Firestore NoSQL cloud database complemented by local storage persistence.
+1. **Presentation Layer (Client):** Responsive React SPA rendering dashboards, group workspaces, expense modals, live camera viewports, interactive group chat, and analytics charts.
+2. **Logic & Algorithmic Layer (Engine):** Business logic executing net balance aggregation, currency formatting, split calculations, receipt encoding, and debt simplification.
+3. **Persistence & Hardware Layer (Cloud / Native):** Firebase Firestore NoSQL cloud database, Firebase Auth, and native HTML5 device camera hardware access.
 
 ```
 +-------------------------------------------------------------------------+
 |                       PRESENTATION LAYER (UI)                           |
-|  [Personal Dashboard]  [Group Management]  [Expense Split Modals]       |
-|  [Settlement Overview] [UPI QR Generator]  [Visual Financial Charts]    |
+|  [Personal Dashboard]  [Group Workspaces]   [Expense Split Modals]      |
+|  [Realtime Group Chat] [Live Camera Modal]  [Visual Financial Charts]   |
+|  [Settlement Overview] [UPI QR Generator]   [Profile & Settings]        |
 +------------------------------------+------------------------------------+
                                      |
                                      v
 +-------------------------------------------------------------------------+
 |                       BUSINESS LOGIC ENGINE                             |
 |  - Currency Formatter (INR, USD, EUR)                                   |
-|  - Split Computations (Equal, Exact, Percentage)                       |
+|  - Split Computations (Equal, Exact, Percentage, Item Breakdown)        |
 |  - GREEDY DEBT SIMPLIFICATION ALGORITHM (O(N log N))                    |
+|  - Native Camera & Canvas Snapshot Processor (`getUserMedia`)           |
+|  - Receipt FileReader & Base64 Encoder                                  |
 |  - UPI Intent Deep-Link Builder (`upi://pay?pa=...&am=...`)             |
 +------------------------------------+------------------------------------+
                                      |
                                      v
 +-------------------------------------------------------------------------+
-|                       DATA PERSISTENCE LAYER                            |
-|     Google Firebase Firestore Cloud DB  <==>  Local Fallback Cache      |
+|                       PERSISTENCE & SECURITY LAYER                      |
+|  Firebase Cloud Firestore  <==>  Firebase Auth  <==>  firestore.rules   |
 +-------------------------------------------------------------------------+
 ```
 **Fig. 4.1: High-Level 3-Tier System Architecture Diagram of SmartSplit**
@@ -515,48 +524,56 @@ The personal dashboard serves as the central hub for the user's finances:
 
 ---
 
-### **5.2 Group Creation & Member Management Module**
+### **5.2 Group Creation & Real-Time Sync Module**
 Users can organize shared living and travel situations into discrete workspaces:
 - Create dedicated groups (e.g., "B.Tech CSE Project Group 7", "Goa Trip 2026", "Hostel Room 204").
-- Add members with customizable names, avatars, and contact details.
-- Real-time member cards showing who is currently in net credit versus net debit.
+- Add members from registered platform users by email or direct selector.
+- Real-time cloud synchronization via Firestore listeners ensures all 4 members see group changes instantly without manual refresh.
 
 ---
 
-### **5.3 Expense Entry & Flexible Splitting Engine**
+### **5.3 Expense Entry & Multi-Modal Splitting Engine**
 Adding an expense is streamlined through a clean modal dialog (`AddExpenseModal.tsx`):
 - Form fields include: Title, Total Amount, Currency, Category, Date, and Payer Selection.
-- **Interactive Split Tabs:** Seamlessly toggle between:
+- **Interactive Split Tabs:**
   - **Equally:** Splits the bill uniformly among all selected participants with one click.
   - **Exact Amounts:** Allows entering exact rupee amounts with real-time balance validation.
-  - **Percentages:** Allows custom percentage allocations with live sum validation.
-- Input validation safeguards prevent saving unless allocations match the total bill amount.
+  - **Percentages:** Allows custom percentage allocations with live 100% sum validation.
+  - **Item Breakdown (Itemizer):** Allows itemizing individual items (e.g., dish names and item prices) before saving.
 
 ---
 
-### **5.4 Debt Simplification & Settlement Execution**
+### **5.4 Live Camera Capture & Receipt Attachment System**
+To provide digital receipt verification without relying on external paid OCR APIs:
+- **Native Web MediaDevices API:** The application directly requests browser camera permissions via `navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })`.
+- **Live Video Viewport:** A real-time `<video>` preview allows the user to align the paper bill or receipt.
+- **Canvas Frame Extraction:** Upon clicking "Capture Photo", the current video frame is drawn onto a virtual HTML5 `<canvas>` and encoded into a standard high-quality JPEG DataURL (`canvas.toDataURL('image/jpeg', 0.85)`).
+- **File & PDF Reader:** Alternatively, receipts can be selected from local storage or cloud files, decoded using the browser's `FileReader` API (`readAsDataURL`), and stored with the expense record.
+
+---
+
+### **5.5 Real-Time Group Chat Module (`GroupChatView.tsx`)**
+To eliminate disconnected conversations on WhatsApp or third-party messengers, SmartSplit provides in-group messaging:
+- **Subscribed Firestore Channel:** Real-time query listener (`onSnapshot`) listening on `collection('chatMessages')` filtered by `groupId`.
+- **Multimedia Sharing:** Group members can send text messages, camera-captured snapshots, and PDF bills directly within the group channel.
+- **Read & Delete Permissions:** Members can delete their own messages, while Firestore Security Rules prevent unauthorized cross-group eavesdropping.
+
+---
+
+### **5.6 Debt Simplification & Dynamic UPI QR Code Generator**
 Once expenses are logged, the **Smart Settlement Engine** automatically generates a clean settlement plan:
 - Replaces dozens of confusing pairwise debts with the absolute minimum number of direct payments.
-- Each payment card clearly highlights:
-  - Who needs to pay whom.
-  - The exact rounded settlement amount.
-  - An interactive **"Pay via UPI"** button.
-  - A **"Mark as Settled"** button that logs the payment record into Firestore and updates balances.
-
----
-
-### **5.5 UPI Deep-Linking & Dynamic QR Code Generator**
-To make settling debts frictionless for Indian users, SmartSplit includes an instant payment engine:
-- Constructs standard **NPCI UPI Deep-Link Intent URLs**:
+- Each payment card clearly highlights who owes whom and the exact amount.
+- **NPCI UPI Deep-Link Format:**
   ```
   upi://pay?pa={payeeVpa}&pn={payeeName}&am={amount}&cu=INR&tn=SmartSplit%20Settlement
   ```
-- Dynamically renders high-contrast QR codes directly within an in-app popup modal.
-- On mobile devices, users can tap to open their installed UPI app directly (Google Pay, PhonePe, Paytm, CRED). On desktop computers, users can simply scan the QR code with their smartphone camera.
+- **QR Code Engine:** Renders dynamic high-contrast 2D QR codes on `<canvas>` using `QRCodeCanvas` for immediate mobile scanning via Google Pay, PhonePe, Paytm, or CRED.
+- **Mark as Settled:** Records atomic settlement transactions into Firestore and zeros out corresponding participant debt balances.
 
 ---
 
-### **5.6 Stand-alone Presentation Mode (`frontend-demo.html`)**
+### **5.7 Zero-Dependency Presentation Mode (`frontend-demo.html`)**
 To allow instant evaluation during academic reviews, lab vivas, and evaluations without requiring node servers, build tools, or cloud credentials:
 - A standalone file **`frontend-demo.html`** is compiled and integrated into the project.
 - It includes the complete responsive UI layout, Tailwind CDN styling, interactive modal dialogs, and working mock data.

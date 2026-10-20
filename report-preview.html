@@ -828,7 +828,22 @@
             <tr>
               <td class="border border-slate-300 p-1.5 font-bold">Cloud Database</td>
               <td class="border border-slate-300 p-1.5">Google Firebase Firestore</td>
-              <td class="border border-slate-300 p-1.5">Real-time NoSQL cloud data synchronization</td>
+              <td class="border border-slate-300 p-1.5">Real-time NoSQL data sync via onSnapshot listeners</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Authentication</td>
+              <td class="border border-slate-300 p-1.5">Firebase Auth</td>
+              <td class="border border-slate-300 p-1.5">Email/password authentication & session management</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Camera & Receipts</td>
+              <td class="border border-slate-300 p-1.5">HTML5 MediaDevices & Canvas</td>
+              <td class="border border-slate-300 p-1.5">Native camera frame capture & base64 encoding</td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-1.5 font-bold">Realtime Chat</td>
+              <td class="border border-slate-300 p-1.5">Firestore Collections</td>
+              <td class="border border-slate-300 p-1.5">In-app collaborative group messaging & receipts</td>
             </tr>
             <tr>
               <td class="border border-slate-300 p-1.5 font-bold">Vector Graphics</td>
@@ -904,29 +919,34 @@
         <h3 class="text-xl font-bold text-slate-700">Implementation & Key Feature Modules</h3>
       </div>
 
-      <h4 class="text-lg font-bold text-slate-900 mb-2">5.1 Personal Budget & Dashboard Module</h4>
-      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
-        The dashboard centralizes individual and group finances. It presents key metrics (Total Spending, You Are Owed, You Owe, Net Balance) with category breakdowns for food, rent, travel, and utilities.
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.1 Personal Budget & Dashboard Module</h4>
+      <p class="text-justify text-xs leading-relaxed mb-2" contenteditable="true">
+        The dashboard centralizes individual and group finances with real-time cards (Total Spending, You Are Owed, You Owe, Net Balance) and category visual distributions.
       </p>
 
-      <h4 class="text-lg font-bold text-slate-900 mb-2">5.2 Multi-Modal Expense Splitting Engine</h4>
-      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
-        The expense creation dialog (<code>AddExpenseModal.tsx</code>) enables three distinct splitting modes:
-      </p>
-      <ul class="list-disc list-inside text-sm space-y-1 mb-4 text-slate-800" contenteditable="true">
-        <li><strong>Equally ($1/N$):</strong> Splits total amount uniformly among all participating group members.</li>
-        <li><strong>Exact Rupee Amounts:</strong> Permits entering customized cash amounts per member with real-time balance validation.</li>
-        <li><strong>Percentages (%):</strong> Allocates custom percentages with instant 100% total validation.</li>
-      </ul>
-
-      <h4 class="text-lg font-bold text-slate-900 mb-2">5.3 Dynamic UPI Intent & QR Code Generator</h4>
-      <p class="text-justify text-base leading-relaxed mb-3" contenteditable="true">
-        To streamline debt settlements in India, SmartSplit constructs NPCI UPI deep-links (<code>upi://pay?pa=...&am=...</code>) and renders high-contrast QR codes directly on-screen. Users scan with PhonePe, Google Pay, or Paytm to settle debts instantly without manually copying bank details.
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.2 Multi-Modal Expense Splitting Engine</h4>
+      <p class="text-justify text-xs leading-relaxed mb-2" contenteditable="true">
+        The modal (<code>AddExpenseModal.tsx</code>) enables: <strong>Equally ($1/N$)</strong>, <strong>Exact Rupee Amounts</strong>, <strong>Percentages (%)</strong>, and <strong>Itemized Dish/Price Breakdown</strong>.
       </p>
 
-      <h4 class="text-lg font-bold text-slate-900 mb-2">5.4 Zero-Dependency Presentation Mode</h4>
-      <p class="text-justify text-base leading-relaxed" contenteditable="true">
-        To facilitate hassle-free college viva and offline evaluation, the application provides a standalone <code>frontend-demo.html</code> file that functions fully upon double-clicking, requiring zero local servers or command line execution.
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.3 Live Camera Receipt Scanner (HTML5 MediaDevices)</h4>
+      <p class="text-justify text-xs leading-relaxed mb-2" contenteditable="true">
+        Directly interfaces with browser hardware using <code>navigator.mediaDevices.getUserMedia</code>. Renders live camera view in a <code>&lt;video&gt;</code> element, captures snapshots via <code>&lt;canvas&gt;</code>, and saves base64 JPEG receipts without third-party server costs.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.4 Real-time Group Chat Module (`GroupChatView.tsx`)</h4>
+      <p class="text-justify text-xs leading-relaxed mb-2" contenteditable="true">
+        Integrated messaging channel powered by Firestore real-time listeners (<code>onSnapshot</code>). Members can discuss expenses, attach captured bill photos, and share documents with zero delay.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.5 Dynamic UPI Intent & QR Code Generator</h4>
+      <p class="text-justify text-xs leading-relaxed mb-2" contenteditable="true">
+        Generates standard NPCI UPI links (<code>upi://pay?pa=...&am=...</code>) and high-contrast QR codes directly on-screen for 1-tap PhonePe, Google Pay, and Paytm settlements.
+      </p>
+
+      <h4 class="text-lg font-bold text-slate-900 mb-1">5.6 Zero-Dependency Presentation Mode</h4>
+      <p class="text-justify text-xs leading-relaxed" contenteditable="true">
+        Provides standalone <code>frontend-demo.html</code> which functions fully upon double-clicking in any browser without needing node servers or command line execution.
       </p>
     </div>
 

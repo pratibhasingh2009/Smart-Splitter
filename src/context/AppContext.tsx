@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   User,
   Group,
@@ -8,8 +8,6 @@ import {
   AppNotification,
   PageView,
   CurrencyCode,
-  ExpenseCategory,
-  SplitMode,
   GroupChatMessage,
 } from '../types';
 import {
@@ -24,6 +22,7 @@ import {
 import {
   saveUserToFirestore,
   updateUserInFirestore,
+  getUserFromFirestore,
   saveGroupToFirestore,
   updateGroupInFirestore,
   deleteGroupFromFirestore,
@@ -43,10 +42,14 @@ import {
   subscribeToSettlements,
   subscribeToRecurring,
   subscribeToGroupMessages,
-  seedDemoDataToFirestore,
 } from '../firebase/db';
 import { auth } from '../firebase/config';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
 
 interface SettleModalState {
   isOpen: boolean;
@@ -62,6 +65,7 @@ interface AppContextType {
   isDemoMode: boolean;
   authLoading: boolean;
   authError: string | null;
+  clearAuthError: () => void;
   currentView: PageView;
   selectedGroupId: string | null;
   currency: CurrencyCode;
@@ -75,7 +79,7 @@ interface AppContextType {
   unreadNotificationCount: number;
   editingExpense: Expense | null;
   isCloudSynced: boolean;
-  
+
   // Modals
   isAddExpenseModalOpen: boolean;
   isCreateGroupModalOpen: boolean;
@@ -88,12 +92,16 @@ interface AppContextType {
   loginAsDemo: (demoEmail?: string) => void;
   loginWithQR: (qrData: string) => boolean;
   register: (name: string, email: string, password?: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   switchUser: (userId: string) => void;
   setCurrency: (c: CurrencyCode) => void;
 
   // Chat Actions
-  sendGroupMessage: (groupId: string, text?: string, fileData?: { url: string; name: string; type: 'image' | 'pdf' | 'file' }) => void;
+  sendGroupMessage: (
+    groupId: string,
+    text?: string,
+    fileData?: { url: string; name: string; type: 'image' | 'pdf' | 'file' }
+  ) => void;
   deleteGroupMessage: (messageId: string) => void;
 
   // Expense Actions
@@ -114,7 +122,16 @@ interface AppContextType {
 
   // Settlement Actions
   recordSettlement: (
-    fromId: string | { fromId: string; toId: string; amount: number; groupId?: string; method?: 'cash' | 'upi' | 'bank_transfer' | 'other'; notes?: string },
+    fromId:
+      | string
+      | {
+          fromId: string;
+          toId: string;
+          amount: number;
+          groupId?: string;
+          method?: 'cash' | 'upi' | 'bank_transfer' | 'other';
+          notes?: string;
+        },
     toId?: string,
     amount?: number,
     groupId?: string,
@@ -158,82 +175,119 @@ interface AppContextType {
   loadDemoData: () => void;
   exportData: (format: 'json' | 'csv') => void;
   importData: (jsonData: string) => boolean;
+
   openFlowModal: () => void;
   closeFlowModal: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  USERS: 'pbs_users_v1',
-  GROUPS: 'pbs_groups_v1',
-  EXPENSES: 'pbs_expenses_v1',
-  SETTLEMENTS: 'pbs_settlements_v1',
-  RECURRING: 'pbs_recurring_v1',
-  NOTIFICATIONS: 'pbs_notifications_v1',
-  MESSAGES: 'pbs_messages_v1',
-  CURRENT_USER_ID: 'pbs_current_user_id_v1',
-  IS_AUTH: 'pbs_is_auth_v1',
-  CURRENCY: 'pbs_currency_v1',
+const DEMO_STORAGE_KEYS = {
+  ACTIVE: 'pbs_is_demo_active_v1',
+  USERS: 'pbs_demo_users_v1',
+  GROUPS: 'pbs_demo_groups_v1',
+  EXPENSES: 'pbs_demo_expenses_v1',
+  SETTLEMENTS: 'pbs_demo_settlements_v1',
+  RECURRING: 'pbs_demo_recurring_v1',
+  NOTIFICATIONS: 'pbs_demo_notifications_v1',
+  MESSAGES: 'pbs_demo_messages_v1',
+  CURRENT_USER_ID: 'pbs_demo_current_user_id_v1',
+  CURRENCY: 'pbs_currency_preference_v1',
+  MONTHLY_BUDGET: 'pbs_monthly_budget_v1',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Persistence state loaders with fallback to initial data
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.USERS);
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  // Demo Mode state
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    return localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true';
   });
 
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
+
+  // Current User profile
   const [currentUser, setCurrentUser] = useState<User>(() => {
-    const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    const found = users.find(u => u.id === savedId);
-    return found || users[0] || INITIAL_USERS[0];
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const savedId = localStorage.getItem(DEMO_STORAGE_KEYS.CURRENT_USER_ID);
+      const found = INITIAL_USERS.find(u => u.id === savedId);
+      return found || INITIAL_USERS[0];
+    }
+    return INITIAL_USERS[0];
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.IS_AUTH);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-
+  // Navigation & UI States
   const [currentView, setCurrentViewInternal] = useState<PageView>('dashboard');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const [currency, setCurrencyState] = useState<CurrencyCode>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENCY);
+    const saved = localStorage.getItem(DEMO_STORAGE_KEYS.CURRENCY);
     return (saved as CurrencyCode) || 'INR';
   });
 
+  // Main collections: for Demo mode, initialize from mockData; for real accounts, populated via Firestore
+  const [users, setUsers] = useState<User[]>(() => {
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.USERS);
+      return saved ? JSON.parse(saved) : INITIAL_USERS;
+    }
+    return INITIAL_USERS;
+  });
+
   const [groups, setGroups] = useState<Group[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.GROUPS);
-    return saved ? JSON.parse(saved) : INITIAL_GROUPS;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.GROUPS);
+      return saved ? JSON.parse(saved) : INITIAL_GROUPS;
+    }
+    return [];
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.EXPENSES);
+      return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
+    }
+    return [];
   });
 
   const [settlements, setSettlements] = useState<SettlementRecord[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SETTLEMENTS);
-    return saved ? JSON.parse(saved) : INITIAL_SETTLEMENTS;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.SETTLEMENTS);
+      return saved ? JSON.parse(saved) : INITIAL_SETTLEMENTS;
+    }
+    return [];
   });
 
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.RECURRING);
-    return saved ? JSON.parse(saved) : INITIAL_RECURRING;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.RECURRING);
+      return saved ? JSON.parse(saved) : INITIAL_RECURRING;
+    }
+    return [];
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.NOTIFICATIONS);
+      return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    }
+    return [];
   });
 
   const [groupMessages, setGroupMessages] = useState<GroupChatMessage[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-    return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+    if (localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true') {
+      const saved = localStorage.getItem(DEMO_STORAGE_KEYS.MESSAGES);
+      return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+    }
+    return [];
   });
 
-  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
 
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
@@ -251,45 +305,145 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     amount: 0,
   });
 
-  // --- Real-time Cloud Synchronization (Firebase Firestore) ---
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(() => {
+    const saved = localStorage.getItem(DEMO_STORAGE_KEYS.MONTHLY_BUDGET);
+    return saved ? Number(saved) : 25000;
+  });
+
+  // --- Real Firebase Authentication Observer ---
   useEffect(() => {
-    // Subscribe to Firestore collections
-    const unsubUsers = subscribeToUsers((cloudUsers) => {
-      if (cloudUsers && cloudUsers.length > 0) {
-        setUsers(cloudUsers);
+    const isDemoActive = localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === 'true';
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setAuthLoading(true);
+      if (firebaseUser) {
+        // Authenticated through Firebase
+        setIsAuthenticated(true);
+        setIsDemoMode(false);
+        localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+
+        try {
+          let userProfile = await getUserFromFirestore(firebaseUser.uid);
+          if (!userProfile) {
+            userProfile = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+              email: firebaseUser.email || '',
+              avatar:
+                firebaseUser.photoURL ||
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              phone: '',
+              upiId: `${(firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'user').toLowerCase().replace(/\s+/g, '')}@upi`,
+              monthlyBudget: 25000,
+              currency: 'INR',
+              isDemo: false,
+            };
+            await saveUserToFirestore(userProfile);
+          }
+          setCurrentUser(userProfile);
+          if (userProfile.currency) setCurrencyState(userProfile.currency);
+          if (userProfile.monthlyBudget) setMonthlyBudgetState(userProfile.monthlyBudget);
+        } catch (err) {
+          console.warn('Could not read/sync user profile from Firestore:', err);
+          // Fallback minimal authenticated user
+          setCurrentUser({
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+            email: firebaseUser.email || '',
+            avatar:
+              firebaseUser.photoURL ||
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            isDemo: false,
+          });
+        }
         setIsCloudSynced(true);
+      } else {
+        // No Firebase session
+        if (isDemoActive) {
+          setIsAuthenticated(true);
+          setIsDemoMode(true);
+          setIsCloudSynced(false);
+          const savedId = localStorage.getItem(DEMO_STORAGE_KEYS.CURRENT_USER_ID);
+          const found = INITIAL_USERS.find(u => u.id === savedId) || INITIAL_USERS[0];
+          setCurrentUser(found);
+        } else {
+          setIsAuthenticated(false);
+          setIsDemoMode(false);
+          setIsCloudSynced(false);
+        }
       }
+      setAuthLoading(false);
     });
 
-    const unsubGroups = subscribeToGroups((cloudGroups) => {
-      if (cloudGroups && cloudGroups.length > 0) {
-        setGroups(cloudGroups);
-      }
-    });
+    return () => unsubscribe();
+  }, []);
 
-    const unsubExpenses = subscribeToExpenses((cloudExpenses) => {
-      if (cloudExpenses && cloudExpenses.length > 0) {
-        setExpenses(cloudExpenses);
-      }
-    });
+  // --- Real-time Cloud Synchronization (Firebase Firestore) for Authenticated Users ---
+  useEffect(() => {
+    // Only subscribe to Firestore when real user is authenticated and NOT in demo mode
+    if (!isAuthenticated || isDemoMode || !auth.currentUser) {
+      return;
+    }
 
-    const unsubSettlements = subscribeToSettlements((cloudSettlements) => {
-      if (cloudSettlements && cloudSettlements.length > 0) {
-        setSettlements(cloudSettlements);
-      }
-    });
+    const userId = auth.currentUser.uid;
+    setIsCloudSynced(true);
 
-    const unsubRecurring = subscribeToRecurring((cloudRecurring) => {
-      if (cloudRecurring && cloudRecurring.length > 0) {
-        setRecurringExpenses(cloudRecurring);
+    // 1. All Users (to show member names, avatars)
+    const unsubUsers = subscribeToUsers(
+      (cloudUsers) => {
+        if (cloudUsers && cloudUsers.length > 0) {
+          // Merge current user with cloud users
+          setUsers(cloudUsers);
+        }
+      },
+      (error) => {
+        console.warn('Firestore Users subscription error:', error.message);
       }
-    });
+    );
 
-    const unsubMessages = subscribeToGroupMessages((cloudMessages) => {
-      if (cloudMessages && cloudMessages.length > 0) {
-        setGroupMessages(cloudMessages);
+    // 2. Scoped Groups (where user is a member)
+    const unsubGroups = subscribeToGroups(
+      userId,
+      (cloudGroups) => {
+        setGroups(cloudGroups || []);
+      },
+      (error) => {
+        console.warn('Firestore Groups subscription error:', error.message);
       }
-    });
+    );
+
+    // 3. Scoped Expenses (where user paid or participated in split)
+    const unsubExpenses = subscribeToExpenses(
+      userId,
+      (cloudExpenses) => {
+        setExpenses(cloudExpenses || []);
+      },
+      (error) => {
+        console.warn('Firestore Expenses subscription error:', error.message);
+      }
+    );
+
+    // 4. Scoped Settlements (where user is debtor or creditor)
+    const unsubSettlements = subscribeToSettlements(
+      userId,
+      (cloudSettlements) => {
+        setSettlements(cloudSettlements || []);
+      },
+      (error) => {
+        console.warn('Firestore Settlements subscription error:', error.message);
+      }
+    );
+
+    // 5. Scoped Recurring Expenses
+    const unsubRecurring = subscribeToRecurring(
+      userId,
+      (cloudRecurring) => {
+        setRecurringExpenses(cloudRecurring || []);
+      },
+      (error) => {
+        console.warn('Firestore Recurring subscription error:', error.message);
+      }
+    );
 
     return () => {
       unsubUsers();
@@ -297,54 +451,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubExpenses();
       unsubSettlements();
       unsubRecurring();
+    };
+  }, [isAuthenticated, isDemoMode, currentUser?.id]);
+
+  // Scoped Group Messages Subscription (when a group is selected)
+  useEffect(() => {
+    if (!isAuthenticated || isDemoMode || !selectedGroupId) {
+      return;
+    }
+
+    const unsubMessages = subscribeToGroupMessages(
+      selectedGroupId,
+      (cloudMessages) => {
+        setGroupMessages(cloudMessages || []);
+      },
+      (error) => {
+        console.warn('Firestore Group Messages subscription error:', error.message);
+      }
+    );
+
+    return () => {
       unsubMessages();
     };
-  }, []);
+  }, [isAuthenticated, isDemoMode, selectedGroupId]);
 
-  // Save to local storage for instant offline recovery
+  // Local demo persistence (Only saves in demo mode)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(groups));
-  }, [groups]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.USERS, JSON.stringify(users));
+    }
+  }, [isDemoMode, users]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
-  }, [expenses]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.GROUPS, JSON.stringify(groups));
+    }
+  }, [isDemoMode, groups]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SETTLEMENTS, JSON.stringify(settlements));
-  }, [settlements]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+    }
+  }, [isDemoMode, expenses]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(recurringExpenses));
-  }, [recurringExpenses]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.SETTLEMENTS, JSON.stringify(settlements));
+    }
+  }, [isDemoMode, settlements]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  }, [notifications]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.RECURRING, JSON.stringify(recurringExpenses));
+    }
+  }, [isDemoMode, recurringExpenses]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(groupMessages));
-  }, [groupMessages]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.MESSAGES, JSON.stringify(groupMessages));
+    }
+  }, [isDemoMode, groupMessages]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUser.id);
-  }, [currentUser]);
+    if (isDemoMode) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.CURRENT_USER_ID, currentUser.id);
+    }
+  }, [isDemoMode, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.IS_AUTH, JSON.stringify(isAuthenticated));
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENCY, currency);
+    localStorage.setItem(DEMO_STORAGE_KEYS.CURRENCY, currency);
   }, [currency]);
 
   // Set Currency
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
+    if (!isDemoMode && currentUser?.id && auth.currentUser) {
+      updateUserInFirestore(currentUser.id, { currency: c });
+    }
   };
 
   // Navigation
@@ -356,73 +539,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Auth actions
-  const login = (email: string): boolean => {
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-      setCurrentViewInternal('dashboard');
-      return true;
+  // Firebase Real Login
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    if (!email.trim() || !password) {
+      setAuthError('Please enter both your email and password.');
+      setAuthLoading(false);
+      return false;
     }
-    // If user doesn't exist, create one & persist in Cloud Firestore
-    const newUser: User = {
-      id: `u_${Date.now()}`,
-      name: email.split('@')[0].replace('.', ' ').replace(/^\w/, c => c.toUpperCase()),
-      email,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    };
-    setUsers(prev => [...prev, newUser]);
-    saveUserToFirestore(newUser);
-    setCurrentUser(newUser);
-    setIsAuthenticated(true);
-    setCurrentViewInternal('dashboard');
-    return true;
+
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      setIsDemoMode(false);
+      localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+      setCurrentViewInternal('dashboard');
+      setAuthLoading(false);
+      return true;
+    } catch (err: any) {
+      console.error('Firebase Auth Login Error:', err);
+      let message = 'Failed to login. Please verify your credentials.';
+      if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/user-not-found'
+      ) {
+        message = 'Invalid email or password. Please verify your credentials or sign up.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        message =
+          'Email/Password sign-in is not enabled in Firebase Console. Please enable Email/Password provider under Firebase Authentication -> Sign-in method.';
+      } else if (err.code === 'auth/too-many-requests') {
+        message = 'Too many failed attempts. Please try again in a few moments.';
+      } else if (err.code === 'auth/network-request-failed') {
+        message = 'Network connection failed. Please check your internet connection.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      setAuthError(message);
+      setAuthLoading(false);
+      return false;
+    }
   };
 
+  // Dedicated Demo Login (Isolated from Firebase Firestore)
+  const loginAsDemo = (demoEmail: string = 'pratibha@gmail.com') => {
+    setAuthLoading(false);
+    setAuthError(null);
+    setIsDemoMode(true);
+    setIsAuthenticated(true);
+    setIsCloudSynced(false);
+    localStorage.setItem(DEMO_STORAGE_KEYS.ACTIVE, 'true');
+
+    const demoUser =
+      INITIAL_USERS.find(u => u.email.toLowerCase() === demoEmail.toLowerCase()) ||
+      INITIAL_USERS[0];
+    setCurrentUser(demoUser);
+    setUsers(INITIAL_USERS);
+    setGroups(INITIAL_GROUPS);
+    setExpenses(INITIAL_EXPENSES);
+    setSettlements(INITIAL_SETTLEMENTS);
+    setRecurringExpenses(INITIAL_RECURRING);
+    setNotifications(INITIAL_NOTIFICATIONS);
+    setGroupMessages(INITIAL_MESSAGES);
+    setCurrentViewInternal('dashboard');
+  };
+
+  // QR Login Scanner (Supports Demo profiles or real auth deep links)
   const loginWithQR = (qrData: string): boolean => {
     try {
-      // 1. Try parsing JSON format (e.g. {"id": "u1", "email": "pratibha@gmail.com"})
       let targetUser: User | undefined;
       if (qrData.trim().startsWith('{') && qrData.trim().endsWith('}')) {
         const parsed = JSON.parse(qrData);
         if (parsed.email) {
-          targetUser = users.find(u => u.email.toLowerCase() === parsed.email.toLowerCase());
-        }
-        if (!targetUser && parsed.id) {
-          targetUser = users.find(u => u.id === parsed.id);
-        }
-        if (!targetUser && parsed.name && parsed.email) {
-          return register(parsed.name, parsed.email);
+          targetUser = INITIAL_USERS.find(
+            u => u.email.toLowerCase() === parsed.email.toLowerCase()
+          );
         }
       }
 
-      // 2. Try raw email / user ID
       if (!targetUser) {
-        targetUser = users.find(
-          u => u.email.toLowerCase() === qrData.toLowerCase().trim() || u.id === qrData.trim()
+        targetUser = INITIAL_USERS.find(
+          u =>
+            u.email.toLowerCase() === qrData.toLowerCase().trim() ||
+            u.id === qrData.trim()
         );
       }
 
-      // 3. Try custom scheme like splitsmart://login?email=...
-      if (!targetUser && qrData.includes('email=')) {
-        const match = qrData.match(/email=([^&]+)/);
-        if (match && match[1]) {
-          const decodedEmail = decodeURIComponent(match[1]);
-          return login(decodedEmail);
-        }
-      }
-
       if (targetUser) {
-        setCurrentUser(targetUser);
-        setIsAuthenticated(true);
-        setCurrentViewInternal('dashboard');
+        loginAsDemo(targetUser.email);
         return true;
-      }
-
-      // If valid email string provided in QR
-      if (qrData.includes('@')) {
-        return login(qrData.trim());
       }
 
       return false;
@@ -431,7 +639,138 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Group Chat Message Handlers
+  // Firebase Real Registration
+  const register = async (name: string, email: string, password?: string): Promise<boolean> => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    if (!name.trim()) {
+      setAuthError('Please enter your full name.');
+      setAuthLoading(false);
+      return false;
+    }
+    if (!email.trim()) {
+      setAuthError('Please enter your email address.');
+      setAuthLoading(false);
+      return false;
+    }
+    if (!password || password.length < 6) {
+      setAuthError('Password must be at least 6 characters long.');
+      setAuthLoading(false);
+      return false;
+    }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const newUser: User = {
+        id: cred.user.uid,
+        name: name.trim(),
+        email: email.trim(),
+        avatar:
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        phone: '',
+        upiId: `${name.toLowerCase().replace(/\s+/g, '')}@upi`,
+        monthlyBudget: 25000,
+        currency: 'INR',
+        isDemo: false,
+      };
+
+      await saveUserToFirestore(newUser);
+      setCurrentUser(newUser);
+      setIsAuthenticated(true);
+      setIsDemoMode(false);
+      localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+
+      // Clean, unpolluted state for genuine new user account
+      setGroups([]);
+      setExpenses([]);
+      setSettlements([]);
+      setRecurringExpenses([]);
+      setGroupMessages([]);
+      setNotifications([
+        {
+          id: `welcome_${Date.now()}`,
+          title: 'Welcome to Personal Budget Splitter!',
+          message: `Hello ${newUser.name}! Your account is now active. Create a group or add your first expense to begin.`,
+          date: 'Just now',
+          read: false,
+          type: 'group',
+        },
+      ]);
+
+      setCurrentViewInternal('dashboard');
+      setAuthLoading(false);
+      return true;
+    } catch (err: any) {
+      console.error('Firebase Auth Register Error:', err);
+      let message = 'Failed to create account.';
+      if (err.code === 'auth/email-already-in-use') {
+        message = 'An account with this email already exists. Please login instead.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/weak-password') {
+        message = 'Password is too weak. Please use at least 6 characters.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        message =
+          'Email/Password sign-up is not enabled in Firebase Console. Please enable Email/Password provider under Firebase Authentication -> Sign-in method.';
+      } else if (err.code === 'auth/network-request-failed') {
+        message = 'Network connection failed. Please check your internet connection.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      setAuthError(message);
+      setAuthLoading(false);
+      return false;
+    }
+  };
+
+  // Logout Flow
+  const logout = async (): Promise<void> => {
+    try {
+      localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+      setIsDemoMode(false);
+      setIsAuthenticated(false);
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsAuthenticated(false);
+      setIsDemoMode(false);
+      setGroups([]);
+      setExpenses([]);
+      setSettlements([]);
+      setRecurringExpenses([]);
+      setGroupMessages([]);
+      setCurrentViewInternal('landing');
+    }
+  };
+
+  // Switch Active Perspective (For demo testing or member view)
+  const switchUser = (userId: string) => {
+    const found = users.find(u => u.id === userId);
+    if (found) {
+      setCurrentUser(found);
+      if (found.currency) {
+        setCurrencyState(found.currency);
+      }
+      if (found.monthlyBudget) {
+        setMonthlyBudgetState(found.monthlyBudget);
+      }
+      const note: AppNotification = {
+        id: `n_${Date.now()}`,
+        title: 'Switched Active View',
+        message: `Now viewing budget & debt ledger as ${found.name}`,
+        date: 'Just now',
+        read: false,
+        type: 'group',
+      };
+      setNotifications(prev => [note, ...prev]);
+    }
+  };
+
+  // Chat Actions
   const sendGroupMessage = (
     groupId: string,
     text?: string,
@@ -453,76 +792,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setGroupMessages(prev => [...prev, newMessage]);
-    saveMessageToFirestore(newMessage);
+
+    if (!isDemoMode && auth.currentUser) {
+      saveMessageToFirestore(newMessage).catch(err => {
+        console.warn('Could not save group message to cloud:', err);
+      });
+    }
   };
 
   const deleteGroupMessage = (messageId: string) => {
     setGroupMessages(prev => prev.filter(m => m.id !== messageId));
-    deleteMessageFromFirestore(messageId);
-  };
-
-  const register = (name: string, email: string): boolean => {
-    const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      setCurrentUser(existing);
-      setIsAuthenticated(true);
-      setCurrentViewInternal('dashboard');
-      return true;
-    }
-    const newUser: User = {
-      id: `u_${Date.now()}`,
-      name,
-      email,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    };
-    setUsers(prev => [...prev, newUser]);
-    saveUserToFirestore(newUser);
-    setCurrentUser(newUser);
-    setIsAuthenticated(true);
-    setCurrentViewInternal('dashboard');
-    return true;
-  };
-
-  const logout = () => {
-    setIsAuthenticated(false);
-    setCurrentViewInternal('landing');
-  };
-
-  const switchUser = (userId: string) => {
-    const found = users.find(u => u.id === userId);
-    if (found) {
-      setCurrentUser(found);
-      if (found.currency) {
-        setCurrencyState(found.currency);
-      }
-      if (found.monthlyBudget) {
-        setMonthlyBudgetState(found.monthlyBudget);
-      }
-      const note: AppNotification = {
-        id: `n_${Date.now()}`,
-        title: 'Switched Active User',
-        message: `Now viewing budget & debt ledger as ${found.name}`,
-        date: 'Just now',
-        read: false,
-        type: 'group',
-      };
-      setNotifications(prev => [note, ...prev]);
+    if (!isDemoMode && auth.currentUser) {
+      deleteMessageFromFirestore(messageId).catch(err => {
+        console.warn('Could not delete group message from cloud:', err);
+      });
     }
   };
 
-  // Expense Handlers (Cloud Persisted)
+  // Expense Handlers
   const addExpense = (expenseData: Omit<Expense, 'id' | 'createdAt'>): Expense => {
     const newExpense: Expense = {
       ...expenseData,
       id: `e_${Date.now()}`,
+      paidBy: expenseData.paidBy || currentUser.id,
+      memberIds: Array.from(
+        new Set(
+          [expenseData.paidBy || currentUser.id, ...(expenseData.splits || []).map(s => s.memberId)].filter(
+            Boolean
+          )
+        )
+      ),
       createdAt: new Date().toISOString(),
     };
-    
-    // Save locally and in Firestore
-    setExpenses(prev => [newExpense, ...prev]);
-    saveExpenseToFirestore(newExpense);
 
-    // Send notification
+    setExpenses(prev => [newExpense, ...prev]);
+
+    if (!isDemoMode && auth.currentUser) {
+      saveExpenseToFirestore(newExpense).catch(err => {
+        console.warn('Could not save expense to cloud:', err);
+      });
+    }
+
     const payer = users.find(u => u.id === newExpense.paidBy)?.name || 'Someone';
     const groupName = groups.find(g => g.id === newExpense.groupId)?.name || 'General';
     const note: AppNotification = {
@@ -542,12 +852,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setExpenses(prev =>
       prev.map(exp => (exp.id === id ? { ...exp, ...updatedFields } : exp))
     );
-    updateExpenseInFirestore(id, updatedFields);
+    if (!isDemoMode && auth.currentUser) {
+      updateExpenseInFirestore(id, updatedFields).catch(err => {
+        console.warn('Could not update expense in cloud:', err);
+      });
+    }
   };
 
   const deleteExpense = (id: string) => {
     setExpenses(prev => prev.filter(exp => exp.id !== id));
-    deleteExpenseFromFirestore(id);
+    if (!isDemoMode && auth.currentUser) {
+      deleteExpenseFromFirestore(id).catch(err => {
+        console.warn('Could not delete expense from cloud:', err);
+      });
+    }
   };
 
   const openAddExpenseModal = (groupId?: string, editExp?: Expense) => {
@@ -563,15 +881,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEditingExpense(null);
   };
 
-  // Group Handlers (Cloud Persisted)
+  // Group Handlers
   const createGroup = (groupData: Omit<Group, 'id' | 'createdAt'>): Group => {
     const newGroup: Group = {
       ...groupData,
       id: `g_${Date.now()}`,
+      createdBy: currentUser.id,
+      members: Array.from(new Set([currentUser.id, ...(groupData.members || [])])),
       createdAt: new Date().toISOString(),
     };
+
     setGroups(prev => [...prev, newGroup]);
-    saveGroupToFirestore(newGroup);
+
+    if (!isDemoMode && auth.currentUser) {
+      saveGroupToFirestore(newGroup).catch(err => {
+        console.warn('Could not save group to cloud:', err);
+      });
+    }
+
     setSelectedGroupId(newGroup.id);
     return newGroup;
   };
@@ -580,13 +907,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGroups(prev =>
       prev.map(grp => (grp.id === id ? { ...grp, ...updatedFields } : grp))
     );
-    updateGroupInFirestore(id, updatedFields);
+    if (!isDemoMode && auth.currentUser) {
+      updateGroupInFirestore(id, updatedFields).catch(err => {
+        console.warn('Could not update group in cloud:', err);
+      });
+    }
   };
 
   const deleteGroup = (id: string) => {
     setGroups(prev => prev.filter(grp => grp.id !== id));
-    deleteGroupFromFirestore(id);
-    // also remove expenses belonging to this group
+    if (!isDemoMode && auth.currentUser) {
+      deleteGroupFromFirestore(id).catch(err => {
+        console.warn('Could not delete group from cloud:', err);
+      });
+    }
     setExpenses(prev => prev.filter(exp => exp.groupId !== id));
     if (selectedGroupId === id) {
       setSelectedGroupId(null);
@@ -602,9 +936,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: name || email.split('@')[0],
         email,
         avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
+        createdBy: currentUser.id,
       };
       setUsers(prev => [...prev, member!]);
-      saveUserToFirestore(member);
+      if (!isDemoMode && auth.currentUser) {
+        saveUserToFirestore(member).catch(err => console.warn('Could not save contact to cloud:', err));
+      }
     }
 
     const memberId = member.id;
@@ -612,7 +949,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(grp => {
         if (grp.id === groupId && !grp.members.includes(memberId)) {
           const updatedMembers = [...grp.members, memberId];
-          updateGroupInFirestore(groupId, { members: updatedMembers });
+          if (!isDemoMode && auth.currentUser) {
+            updateGroupInFirestore(groupId, { members: updatedMembers });
+          }
           return {
             ...grp,
             members: updatedMembers,
@@ -628,7 +967,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(grp => {
         if (grp.id === groupId) {
           const updatedMembers = grp.members.filter(m => m !== memberId);
-          updateGroupInFirestore(groupId, { members: updatedMembers });
+          if (!isDemoMode && auth.currentUser) {
+            updateGroupInFirestore(groupId, { members: updatedMembers });
+          }
           return {
             ...grp,
             members: updatedMembers,
@@ -642,9 +983,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openCreateGroupModal = () => setIsCreateGroupModalOpen(true);
   const closeCreateGroupModal = () => setIsCreateGroupModalOpen(false);
 
-  // Settlement Handlers (Cloud Persisted)
+  // Settlement Handlers
   const recordSettlement = (
-    fromIdOrObj: string | { fromId: string; toId: string; amount: number; groupId?: string; method?: 'cash' | 'upi' | 'bank_transfer' | 'other'; notes?: string },
+    fromIdOrObj:
+      | string
+      | {
+          fromId: string;
+          toId: string;
+          amount: number;
+          groupId?: string;
+          method?: 'cash' | 'upi' | 'bank_transfer' | 'other';
+          notes?: string;
+        },
     toIdArg?: string,
     amountArg?: number,
     groupIdArg?: string,
@@ -685,9 +1035,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       groupId: actualGroupId,
       method: actualMethod,
       notes: actualNotes,
+      participantIds: [actualFromId, actualToId],
     };
+
     setSettlements(prev => [newRecord, ...prev]);
-    saveSettlementToFirestore(newRecord);
+
+    if (!isDemoMode && auth.currentUser) {
+      saveSettlementToFirestore(newRecord).catch(err => {
+        console.warn('Could not save settlement to cloud:', err);
+      });
+    }
 
     const fromUser = users.find(u => u.id === actualFromId)?.name || 'Someone';
     const toUser = users.find(u => u.id === actualToId)?.name || 'Someone';
@@ -705,7 +1062,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteSettlement = (id: string) => {
     setSettlements(prev => prev.filter(s => s.id !== id));
-    deleteSettlementFromFirestore(id);
+    if (!isDemoMode && auth.currentUser) {
+      deleteSettlementFromFirestore(id).catch(err => {
+        console.warn('Could not delete settlement from cloud:', err);
+      });
+    }
   };
 
   const openSettleModal = (fromId?: string, toId?: string, amount?: number, groupId?: string) => {
@@ -722,14 +1083,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSettleModalState(prev => ({ ...prev, isOpen: false }));
   };
 
-  // Recurring Handlers (Cloud Persisted)
+  // Recurring Expenses Handlers
   const addRecurringExpense = (rec: Omit<RecurringExpense, 'id'>) => {
     const newRec: RecurringExpense = {
       ...rec,
       id: `r_${Date.now()}`,
+      paidBy: rec.paidBy || currentUser.id,
+      memberIds: Array.from(
+        new Set([rec.paidBy || currentUser.id, ...(rec.splits || []).map(s => s.memberId)].filter(Boolean))
+      ),
     };
+
     setRecurringExpenses(prev => [...prev, newRec]);
-    saveRecurringToFirestore(newRec);
+
+    if (!isDemoMode && auth.currentUser) {
+      saveRecurringToFirestore(newRec).catch(err => {
+        console.warn('Could not save recurring expense to cloud:', err);
+      });
+    }
   };
 
   const toggleRecurringStatus = (id: string) => {
@@ -737,7 +1108,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(r => {
         if (r.id === id) {
           const newStatus = r.status === 'active' ? 'paused' : 'active';
-          updateRecurringInFirestore(id, { status: newStatus });
+          if (!isDemoMode && auth.currentUser) {
+            updateRecurringInFirestore(id, { status: newStatus });
+          }
           return { ...r, status: newStatus };
         }
         return r;
@@ -747,7 +1120,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteRecurringExpense = (id: string) => {
     setRecurringExpenses(prev => prev.filter(r => r.id !== id));
-    deleteRecurringFromFirestore(id);
+    if (!isDemoMode && auth.currentUser) {
+      deleteRecurringFromFirestore(id).catch(err => {
+        console.warn('Could not delete recurring expense from cloud:', err);
+      });
+    }
   };
 
   const applyRecurringExpense = (id: string) => {
@@ -764,12 +1141,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       category: rec.category,
       splitMode: rec.splitMode,
       splits: rec.splits,
+      memberIds: Array.from(
+        new Set([rec.paidBy, ...(rec.splits || []).map(s => s.memberId)].filter(Boolean))
+      ),
       notes: `Generated from recurring subscription (${rec.frequency})`,
       createdAt: new Date().toISOString(),
     };
 
     setExpenses(prev => [newExpense, ...prev]);
-    saveExpenseToFirestore(newExpense);
+    if (!isDemoMode && auth.currentUser) {
+      saveExpenseToFirestore(newExpense).catch(err => {
+        console.warn('Could not save recurring generated expense:', err);
+      });
+    }
 
     const nextDate = new Date();
     if (rec.frequency === 'weekly') {
@@ -782,11 +1166,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const nextDueDateStr = nextDate.toISOString().split('T')[0];
     setRecurringExpenses(prev =>
-      prev.map(r =>
-        r.id === id ? { ...r, nextDueDate: nextDueDateStr } : r
-      )
+      prev.map(r => (r.id === id ? { ...r, nextDueDate: nextDueDateStr } : r))
     );
-    updateRecurringInFirestore(id, { nextDueDate: nextDueDateStr });
+    if (!isDemoMode && auth.currentUser) {
+      updateRecurringInFirestore(id, { nextDueDate: nextDueDateStr });
+    }
 
     const note: AppNotification = {
       id: `n_${Date.now()}`,
@@ -797,29 +1181,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       type: 'recurring',
     };
     setNotifications(prev => [note, ...prev]);
-  };
-
-  // Notification Handlers
-  const markNotificationAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const markAllNotificationsAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const unreadNotificationCount = notifications.filter(n => !n.read).length;
-
-  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(() => {
-    const saved = localStorage.getItem('pbs_monthly_budget_v1');
-    return saved ? Number(saved) : 25000;
-  });
-
-  const setMonthlyBudget = (b: number) => {
-    setMonthlyBudgetState(b);
-    localStorage.setItem('pbs_monthly_budget_v1', b.toString());
   };
 
   const autoApplyDueRecurring = () => {
@@ -837,6 +1198,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return appliedCount;
   };
 
+  // Notification Handlers
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const unreadNotificationCount = notifications.filter(n => !n.read).length;
+
+  const setMonthlyBudget = (b: number) => {
+    setMonthlyBudgetState(b);
+    localStorage.setItem(DEMO_STORAGE_KEYS.MONTHLY_BUDGET, b.toString());
+    if (!isDemoMode && currentUser?.id && auth.currentUser) {
+      updateUserInFirestore(currentUser.id, { monthlyBudget: b });
+    }
+  };
+
   // Group Enrichment (Notes & Budget)
   const addGroupNote = (groupId: string, text: string) => {
     if (!text.trim()) return;
@@ -851,7 +1233,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(g => {
         if (g.id === groupId) {
           const updatedNotes = [...(g.notes || []), newNote];
-          updateGroupInFirestore(groupId, { notes: updatedNotes });
+          if (!isDemoMode && auth.currentUser) {
+            updateGroupInFirestore(groupId, { notes: updatedNotes });
+          }
           return { ...g, notes: updatedNotes };
         }
         return g;
@@ -864,7 +1248,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(g => {
         if (g.id === groupId) {
           const updatedNotes = (g.notes || []).filter(n => n.id !== noteId);
-          updateGroupInFirestore(groupId, { notes: updatedNotes });
+          if (!isDemoMode && auth.currentUser) {
+            updateGroupInFirestore(groupId, { notes: updatedNotes });
+          }
           return { ...g, notes: updatedNotes };
         }
         return g;
@@ -876,7 +1262,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGroups(prev =>
       prev.map(g => {
         if (g.id === groupId) {
-          updateGroupInFirestore(groupId, { budget });
+          if (!isDemoMode && auth.currentUser) {
+            updateGroupInFirestore(groupId, { budget });
+          }
           return { ...g, budget };
         }
         return g;
@@ -893,9 +1281,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`,
       phone: phone || '+91 99887 76655',
       upiId: upiId || `${name.toLowerCase().replace(/\s+/g, '')}@upi`,
+      createdBy: currentUser.id,
     };
     setUsers(prev => [...prev, newFriend]);
-    saveUserToFirestore(newFriend);
+    if (!isDemoMode && auth.currentUser) {
+      saveUserToFirestore(newFriend).catch(err => {
+        console.warn('Could not save friend to cloud:', err);
+      });
+    }
     return newFriend;
   };
 
@@ -903,7 +1296,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(prev =>
       prev.map(u => (u.id === userId ? { ...u, ...data } : u))
     );
-    updateUserInFirestore(userId, data);
+    if (!isDemoMode && auth.currentUser) {
+      updateUserInFirestore(userId, data).catch(err => {
+        console.warn('Could not update user profile in cloud:', err);
+      });
+    }
     if (currentUser.id === userId) {
       setCurrentUser(prev => ({ ...prev, ...data }));
     }
@@ -912,25 +1309,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const importData = (jsonData: string): boolean => {
     try {
       const parsed = JSON.parse(jsonData);
-      if (parsed.users) {
+      if (parsed.users && Array.isArray(parsed.users)) {
         setUsers(parsed.users);
-        parsed.users.forEach((u: User) => saveUserToFirestore(u));
       }
-      if (parsed.groups) {
+      if (parsed.groups && Array.isArray(parsed.groups)) {
         setGroups(parsed.groups);
-        parsed.groups.forEach((g: Group) => saveGroupToFirestore(g));
       }
-      if (parsed.expenses) {
+      if (parsed.expenses && Array.isArray(parsed.expenses)) {
         setExpenses(parsed.expenses);
-        parsed.expenses.forEach((e: Expense) => saveExpenseToFirestore(e));
       }
-      if (parsed.settlements) {
+      if (parsed.settlements && Array.isArray(parsed.settlements)) {
         setSettlements(parsed.settlements);
-        parsed.settlements.forEach((s: SettlementRecord) => saveSettlementToFirestore(s));
       }
-      if (parsed.recurringExpenses) {
+      if (parsed.recurringExpenses && Array.isArray(parsed.recurringExpenses)) {
         setRecurringExpenses(parsed.recurringExpenses);
-        parsed.recurringExpenses.forEach((r: RecurringExpense) => saveRecurringToFirestore(r));
       }
       return true;
     } catch {
@@ -938,7 +1330,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Reset & Export
+  // Safe Reset & Export (Scoped only to app keys, never clears user's whole browser storage)
   const resetData = () => {
     setUsers(INITIAL_USERS);
     setCurrentUser(INITIAL_USERS[0]);
@@ -948,39 +1340,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRecurringExpenses(INITIAL_RECURRING);
     setNotifications(INITIAL_NOTIFICATIONS);
     setCurrencyState('INR');
+    setIsDemoMode(true);
     setIsAuthenticated(true);
-    localStorage.clear();
+    // Only clean app-specific keys
+    Object.values(DEMO_STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(DEMO_STORAGE_KEYS.ACTIVE, 'true');
   };
 
   const clearAllData = () => {
-    // Keeps current user profile, wipes all sample expenses, settlements, groups & messages
     setExpenses([]);
     setGroups([]);
     setSettlements([]);
     setRecurringExpenses([]);
     setNotifications([]);
     setGroupMessages([]);
-    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-    localStorage.removeItem(STORAGE_KEYS.GROUPS);
-    localStorage.removeItem(STORAGE_KEYS.SETTLEMENTS);
-    localStorage.removeItem(STORAGE_KEYS.RECURRING);
-    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.EXPENSES);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.GROUPS);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.SETTLEMENTS);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.RECURRING);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.NOTIFICATIONS);
+    localStorage.removeItem(DEMO_STORAGE_KEYS.MESSAGES);
   };
 
   const loadDemoData = () => {
-    setUsers(INITIAL_USERS);
-    setCurrentUser(INITIAL_USERS[0]);
-    setGroups(INITIAL_GROUPS);
-    setExpenses(INITIAL_EXPENSES);
-    setSettlements(INITIAL_SETTLEMENTS);
-    setRecurringExpenses(INITIAL_RECURRING);
-    setNotifications(INITIAL_NOTIFICATIONS);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
-    localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(INITIAL_GROUPS));
-    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
-    localStorage.setItem(STORAGE_KEYS.SETTLEMENTS, JSON.stringify(INITIAL_SETTLEMENTS));
-    localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(INITIAL_RECURRING));
+    loginAsDemo('pratibha@gmail.com');
   };
 
   const exportData = (format: 'json' | 'csv') => {
@@ -1027,6 +1410,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         currentUser,
         isAuthenticated,
+        isDemoMode,
+        authLoading,
+        authError,
+        clearAuthError,
         currentView,
         selectedGroupId,
         currency,
@@ -1046,6 +1433,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settleModalState,
         setCurrentView,
         login,
+        loginAsDemo,
         loginWithQR,
         register,
         logout,

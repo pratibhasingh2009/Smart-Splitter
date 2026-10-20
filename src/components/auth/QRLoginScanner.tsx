@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const QRLoginScanner: React.FC<Props> = ({ onSuccess, onCancel }) => {
-  const { users, loginWithQR, login } = useApp();
+  const { users, loginWithQR, login, loginAsDemo } = useApp();
   const [subTab, setSubTab] = useState<'scan' | 'universal-qr'>('scan');
   const [isScanning, setIsScanning] = useState(true);
   const [cameraError, setCameraError] = useState('');
@@ -133,26 +133,25 @@ export const QRLoginScanner: React.FC<Props> = ({ onSuccess, onCancel }) => {
     animationFrameId.current = requestAnimationFrame(tick);
   };
 
-  const handleCodeFound = (qrData: string) => {
+  const handleCodeFound = async (qrData: string) => {
     stopCamera();
     setIsProcessing(true);
     setScannedResult(qrData);
 
-    // Try normal QR login
     let success = loginWithQR(qrData);
 
-    // If it's universal QR payload
     if (!success) {
       try {
         const parsed = JSON.parse(qrData);
         if (parsed.type === 'universal_login_signup' || parsed.app === 'HisabKitab-PersonalBudget') {
-          success = login(parsed.autoLoginEmail || 'pratibha@gmail.com', 'password123');
+          loginAsDemo(parsed.autoLoginEmail || 'pratibha@gmail.com');
+          success = true;
         }
       } catch (e) {
-        // Not json, check if matches any user email
         const matched = users.find(u => u.email.toLowerCase() === qrData.trim().toLowerCase());
         if (matched) {
-          success = login(matched.email, 'password123');
+          loginAsDemo(matched.email);
+          success = true;
         }
       }
     }
@@ -160,7 +159,7 @@ export const QRLoginScanner: React.FC<Props> = ({ onSuccess, onCancel }) => {
     if (success) {
       setTimeout(() => {
         onSuccess(qrData);
-      }, 600);
+      }, 400);
     } else {
       setIsProcessing(false);
       setCameraError(`QR code read ("${qrData.slice(0, 30)}..."), but no corresponding user was found. Please check your QR code.`);
