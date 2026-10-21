@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   Users,
+  FileText,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CurrencyCode } from '../../types';
@@ -28,6 +29,7 @@ export const Header: React.FC = () => {
     setCurrency,
     openAddExpenseModal,
     setCurrentView,
+    openReportModal,
     logout,
     isSidebarOpen,
     toggleSidebar,

@@ -24,6 +24,7 @@ import {
   FolderOpen,
   Link as LinkIcon,
   X,
+  FileText,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CurrencyCode } from '../../types';
@@ -58,6 +59,7 @@ export const ProfileSettingsView: React.FC = () => {
     loadDemoData,
     exportData,
     openFlowModal,
+    openReportModal,
   } = useApp();
 
   const [name, setName] = useState(currentUser.name || '');

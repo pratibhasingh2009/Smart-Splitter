@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   X,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PageView } from '../../types';
@@ -23,6 +24,7 @@ export const Sidebar: React.FC = () => {
     setCurrentView,
     logout,
     openFlowModal,
+    openReportModal,
     isSidebarOpen,
     setIsSidebarOpen,
     toggleSidebar,
@@ -60,51 +62,51 @@ export const Sidebar: React.FC = () => {
       {/* Blue Sidebar Drawer */}
       <aside
         id="app-sidebar"
-        className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-64 bg-[#145DA0] text-white flex flex-col justify-between shrink-0 h-screen shadow-2xl lg:shadow-xl select-none transition-all duration-300 ease-in-out ${
+        className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-64 bg-[#145DA0] text-white flex flex-col h-screen max-h-screen shrink-0 shadow-2xl lg:shadow-xl select-none transition-all duration-300 ease-in-out ${
           isSidebarOpen
             ? 'translate-x-0 opacity-100'
             : '-translate-x-full lg:-ml-64 opacity-0 pointer-events-none'
         }`}
       >
-        {/* Brand Header */}
-        <div>
-          <div className="p-5 flex items-center justify-between border-b border-white/10">
-            <div
-              id="sidebar-brand"
-              onClick={() => {
-                setCurrentView('dashboard');
-                setIsSidebarOpen(false);
-              }}
-              className="flex items-center gap-3 cursor-pointer hover:opacity-95 transition-opacity"
-              title="Go to Dashboard & Close Sidebar"
-            >
-              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                <div className="w-7 h-7 rounded-xl bg-white text-[#145DA0] flex items-center justify-center font-bold shadow-md">
-                  <Users className="w-4 h-4 text-[#145DA0]" />
-                </div>
-              </div>
-              <div className="leading-tight">
-                <h1 className="font-extrabold text-[17px] tracking-tight text-white flex items-center gap-1.5">
-                  Personal
-                </h1>
-                <p className="text-white/80 text-[11px] font-semibold tracking-wide">
-                  Budget Splitter
-                </p>
+        {/* Brand Header - Pinned at top */}
+        <div className="shrink-0 p-4 sm:p-5 flex items-center justify-between border-b border-white/10 bg-[#145DA0]">
+          <div
+            id="sidebar-brand"
+            onClick={() => {
+              setCurrentView('dashboard');
+              setIsSidebarOpen(false);
+            }}
+            className="flex items-center gap-3 cursor-pointer hover:opacity-95 transition-opacity"
+            title="Go to Dashboard & Close Sidebar"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
+              <div className="w-7 h-7 rounded-xl bg-white text-[#145DA0] flex items-center justify-center font-bold shadow-md">
+                <Users className="w-4 h-4 text-[#145DA0]" />
               </div>
             </div>
-
-            {/* Collapse / Close Button */}
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Slide sidebar away"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            <div className="leading-tight">
+              <h1 className="font-extrabold text-[17px] tracking-tight text-white flex items-center gap-1.5">
+                Personal
+              </h1>
+              <p className="text-white/80 text-[11px] font-semibold tracking-wide">
+                Budget Splitter
+              </p>
+            </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="px-3 py-3 space-y-1.5" aria-label="Main Navigation">
+          {/* Collapse / Close Button */}
+          <button
+            onClick={toggleSidebar}
+            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title="Slide sidebar away"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Navigation Links (Middle section that scrolls smoothly) */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar px-3 py-2.5">
+          <nav className="space-y-1" aria-label="Main Navigation">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive =
@@ -116,7 +118,7 @@ export const Sidebar: React.FC = () => {
                   key={item.id}
                   id={`sidebar-nav-${item.id}`}
                   onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-150 text-left ${
+                  className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-left ${
                     isActive
                       ? 'bg-[#F5B942] text-[#1F2937] font-bold shadow-md shadow-black/10 translate-x-1'
                       : 'text-white/85 hover:text-white hover:bg-white/10'
@@ -137,8 +139,8 @@ export const Sidebar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Bottom Section */}
-        <div className="p-4 space-y-2.5">
+        {/* Bottom Section - Pinned at bottom, always fully visible */}
+        <div className="shrink-0 p-3 sm:p-4 space-y-2 border-t border-white/10 bg-[#0f4b82]/40 backdrop-blur-xs">
           {/* User Flow & Architecture Button */}
           <button
             id="btn-view-user-flow"
@@ -146,20 +148,20 @@ export const Sidebar: React.FC = () => {
               openFlowModal();
               setIsSidebarOpen(false);
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition-all shadow-sm active:scale-98"
           >
             <GitBranch className="w-4 h-4 text-white/80" />
             <span>Architecture & Flow</span>
           </button>
 
           {/* Logout Action */}
-          <div className="pt-2 border-t border-white/15">
+          <div className="pt-1.5 border-t border-white/10">
             <button
               id="sidebar-btn-logout"
               onClick={logout}
-              className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-red-500/20 hover:border-red-400/30 transition-all text-left"
+              className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-red-500/20 hover:border-red-400/30 transition-all text-left active:scale-98"
             >
-              <LogOut className="w-5 h-5 text-white/80" />
+              <LogOut className="w-4.5 h-4.5 text-white/80" />
               <span>Logout</span>
             </button>
           </div>

@@ -22,7 +22,7 @@ in
 ---
 
 ### **Under the Supervision of:**
-**Dr. Nikhil Sharma**  
+**Mr. Abhijeet Gupta**  
 *Assistant Professor, Department of Computer Science & Engineering*
 
 ---
@@ -35,7 +35,7 @@ in
 <br>
 
 ### **DR. A. P. J. ABDUL KALAM TECHNICAL UNIVERSITY, UTTAR PRADESH, LUCKNOW**  
-**ACADEMIC YEAR: 2025–2026**
+**ACADEMIC YEAR: 2026–2027**
 
 ---
 \pagebreak
@@ -649,6 +649,11 @@ The interface was verified across multiple devices and viewports:
 
 ### **6.5 User Interface Screenshots & Demonstrations**
 
+#### **Figure 6.1: Live Application Landing Page & User Interface (SmartSplit)**
+![Figure 6.1: Live Application Landing Page](/assets/aistudio/image_e63222b2.png)
+*Fig. 6.1: Live Application Landing Page with responsive hero banner, quick actions, and user authentication navigation.*
+
+#### **Figure 6.2: Group Expense Ledger & Settlement Layout**
 ```
 +---------------------------------------------------------------------------------------+
 |  ₹  SmartSplit - Personal & Shared Expense Manager             [● Prototype Active]  |
@@ -673,7 +678,11 @@ The interface was verified across multiple devices and viewports:
 |     Paid by Pratibha                                 | Amount: ₹4,612.50              |
 +---------------------------------------------------------------------------------------+
 ```
-**Fig. 6.1: High-Fidelity UI Layout Representation of the SmartSplit Dashboard**
+*Fig. 6.2: High-Fidelity UI Layout Representation of the SmartSplit Dashboard & Settlement Engine.*
+
+#### **Figure 6.3: Continuous Integration & Deployment (GitHub Sync & Vercel Pipeline)**
+![Figure 6.3: Continuous Integration & Deployment Pipeline](/assets/aistudio/image_1365cdef.png)
+*Fig. 6.3: Automated Cloud Deployment pipeline linking GitHub repository (pratibhasingh2009/Smart-Splitter) with Vercel Production Environment.*
 
 ---
 \pagebreak

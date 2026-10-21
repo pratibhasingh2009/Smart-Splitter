@@ -84,6 +84,7 @@ interface AppContextType {
   isAddExpenseModalOpen: boolean;
   isCreateGroupModalOpen: boolean;
   isFlowModalOpen: boolean;
+  isReportModalOpen: boolean;
   settleModalState: SettleModalState;
 
   // Navigation & Auth Actions
@@ -178,6 +179,8 @@ interface AppContextType {
 
   openFlowModal: () => void;
   closeFlowModal: () => void;
+  openReportModal: () => void;
+  closeReportModal: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -298,6 +301,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isFlowModalOpen, setIsFlowModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [settleModalState, setSettleModalState] = useState<SettleModalState>({
     isOpen: false,
     fromId: '',
@@ -1404,6 +1408,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openFlowModal = () => setIsFlowModalOpen(true);
   const closeFlowModal = () => setIsFlowModalOpen(false);
+  const openReportModal = () => setIsReportModalOpen(true);
+  const closeReportModal = () => setIsReportModalOpen(false);
 
   return (
     <AppContext.Provider
@@ -1430,6 +1436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAddExpenseModalOpen,
         isCreateGroupModalOpen,
         isFlowModalOpen,
+        isReportModalOpen,
         settleModalState,
         setCurrentView,
         login,
@@ -1481,6 +1488,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         importData,
         openFlowModal,
         closeFlowModal,
+        openReportModal,
+        closeReportModal,
       }}
     >
       {children}

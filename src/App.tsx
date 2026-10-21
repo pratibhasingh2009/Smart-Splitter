@@ -18,6 +18,7 @@ import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { CreateGroupModal } from './components/modals/CreateGroupModal';
 import { SettlePaymentModal } from './components/modals/SettlePaymentModal';
 import { UserFlowModal } from './components/modals/UserFlowModal';
+import { ProjectReportModal } from './components/modals/ProjectReportModal';
 
 const AppContent: React.FC = () => {
   const {
@@ -89,6 +90,7 @@ const AppContent: React.FC = () => {
       <CreateGroupModal />
       <SettlePaymentModal />
       <UserFlowModal />
+      <ProjectReportModal />
     </div>
   );
 };
