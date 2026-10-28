@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { REPORT_HTML_CONTENT } from '../../data/reportHtmlContent';
 
 export const ProjectReportModal: React.FC = () => {
   const { isReportModalOpen, closeReportModal } = useApp();
@@ -36,8 +37,8 @@ export const ProjectReportModal: React.FC = () => {
     } catch {
       // Cross-origin fallback
     }
-    // Fallback: open print dialog or report window
-    window.open('./report-preview.html', '_blank');
+    // Fallback: open print dialog
+    handlePrint();
     setDownloadingFormat(null);
   };
 
@@ -54,11 +55,9 @@ export const ProjectReportModal: React.FC = () => {
         }
       }
 
-      // Robust fallback: fetch report-preview.html and download as .doc
-      const res = await fetch('./report-preview.html');
-      const htmlText = await res.text();
+      // In-memory Word generator from preloaded HTML
       const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, 'text/html');
+      const doc = parser.parseFromString(REPORT_HTML_CONTENT, 'text/html');
       const content = doc.getElementById('report-content') || doc.body;
 
       const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' ` +
@@ -87,7 +86,6 @@ export const ProjectReportModal: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Word export error:', err);
-      window.open('./report-preview.html', '_blank');
     } finally {
       setTimeout(() => setDownloadingFormat(null), 1200);
     }
@@ -104,13 +102,13 @@ export const ProjectReportModal: React.FC = () => {
     } catch {
       // Fallback
     }
-    window.open('./report-preview.html', '_blank');
   };
 
-  // 4. Open in a standalone new browser tab
+  // 4. Open in a standalone new browser tab using blob URL (zero 404 network errors)
   const handleOpenNewTab = () => {
-    // Uses relative path so it matches whatever domain the user is running on
-    window.open('./report-preview.html', '_blank');
+    const blob = new Blob([REPORT_HTML_CONTENT], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   };
 
   return (
@@ -139,7 +137,7 @@ export const ProjectReportModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-slate-300">
-                Guide: <strong className="text-white">Mr. Abhijeet Gupta</strong> • Priya Sharma, Rahul Verma, Ananya Patel, Amit Kumar
+                Guide: <strong className="text-white">Mr. Abhijeet Gupta</strong> • Pratibha Singh, Pratiksha Singh, Priyansh Kalra, Priyam Tripathi
               </p>
             </div>
           </div>
@@ -147,11 +145,29 @@ export const ProjectReportModal: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex items-center flex-wrap gap-2">
             
-            {/* Live Editable Indicator */}
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Click any text in report to edit</span>
-            </div>
+
+            {/* Download Native PowerPoint (.pptx) */}
+            <a
+              href="/SmartSplit_Mini_Project_Presentation_Group7.pptx"
+              download="SmartSplit_Mini_Project_Presentation_Group7.pptx"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 active:scale-95 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+              title="Download native PowerPoint presentation matching GL Bajaj format"
+            >
+              <Download className="w-4 h-4" />
+              <span>PPTX Presentation</span>
+            </a>
+
+            {/* View Presentation Slides */}
+            <a
+              href="/presentation.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+              title="Open full 15-slide GL Bajaj presentation viewer"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>View Slides</span>
+            </a>
 
             {/* 1-Click PDF */}
             <button
@@ -231,7 +247,7 @@ export const ProjectReportModal: React.FC = () => {
 
           <iframe
             ref={iframeRef}
-            src="./report-preview.html"
+            srcDoc={REPORT_HTML_CONTENT}
             onLoad={() => setIsIframeLoaded(true)}
             title="Project Report Preview"
             className="w-full h-full border-0"

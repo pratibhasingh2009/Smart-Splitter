@@ -301,7 +301,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isFlowModalOpen, setIsFlowModalOpen] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.toLowerCase();
+    return (
+      params.get('report') === 'true' ||
+      params.get('report') === '1' ||
+      params.has('report') ||
+      hash === '#report' ||
+      hash === '#/report'
+    );
+  });
   const [settleModalState, setSettleModalState] = useState<SettleModalState>({
     isOpen: false,
     fromId: '',

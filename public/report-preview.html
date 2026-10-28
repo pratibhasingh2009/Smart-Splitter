@@ -12,43 +12,75 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    @media print {
-      body {
-        background: white !important;
-        color: black !important;
-      }
-      .no-print {
-        display: none !important;
-      }
-      .page-break {
-        page-break-before: always;
-        break-before: page;
-      }
-      .page-container {
-        box-shadow: none !important;
-        border: none !important;
-        margin: 0 !important;
-        padding: 2.2cm 2cm !important;
-        width: 100% !important;
-        min-height: auto !important;
-      }
+    * {
+      box-sizing: border-box !important;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
     }
 
     body {
       font-family: 'Times New Roman', Times, serif;
       background-color: #f1f5f9;
       color: #111827;
-      line-height: 1.6;
+      line-height: 1.5;
+      margin: 0;
+      padding: 24px 0;
     }
 
     .page-container {
+      box-sizing: border-box !important;
       width: 210mm;
-      min-height: 297mm;
-      padding: 25mm 22mm 25mm 25mm; /* Standard academic margin */
-      margin: 24px auto;
+      height: 296.5mm;
+      min-height: 296.5mm;
+      max-height: 296.5mm;
+      padding: 20mm 20mm 20mm 25mm; /* Standard academic margin: Top 20mm, Right 20mm, Bottom 20mm, Left 25mm (Gutter) */
+      margin: 20px auto;
       background: white;
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
       position: relative;
+      overflow: hidden;
+    }
+
+    @media print {
+      html, body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 210mm !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .page-container {
+        box-sizing: border-box !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 20mm 20mm 20mm 25mm !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        overflow: hidden !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-before: avoid !important;
+        break-before: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .page-container:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .page-break {
+        page-break-before: avoid !important;
+        break-before: avoid !important;
+      }
     }
 
     /* Editable highlight hover */
@@ -127,7 +159,7 @@
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-slate-800 border border-slate-200">
       <div class="flex justify-between items-center pb-3 border-b border-slate-200">
         <h3 class="text-lg font-bold text-slate-900 flex items-center">
-          <span class="mr-2 text-xl">📄</span> Chrome me PDF Save Kaise Karein:
+          <span class="mr-2 text-xl">📄</span> How to Save as Clean PDF:
         </h3>
         <button onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
       </div>
@@ -135,31 +167,37 @@
         <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
           <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
           <div>
-            <strong>Destination:</strong> Dropdown me se <strong>"Save as PDF"</strong> chunein.
+            <strong>Destination:</strong> Select <strong>"Save as PDF"</strong> from the dropdown.
           </div>
         </div>
         <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
           <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
           <div>
-            <strong>Pages:</strong> <strong>"All"</strong> select rakhein (poori report aayegi).
+            <strong>Pages:</strong> Keep <strong>"All"</strong> selected.
           </div>
         </div>
         <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
           <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
           <div>
-            <strong>More settings:</strong> <strong>"Background graphics"</strong> par checkmark (✔) karein taaki college stamp aur styling print me aayein!
+            <strong>Margins:</strong> Set Margins to <strong>"None"</strong> or <strong>"Default"</strong>.
+          </div>
+        </div>
+        <div class="flex items-start space-x-2.5 bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+          <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">4</span>
+          <div>
+            <strong>Options:</strong> Check <strong>"Background graphics"</strong> so headers and styling are included.
           </div>
         </div>
         <div class="flex items-start space-x-2.5 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-          <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">4</span>
+          <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">5</span>
           <div>
-            Neeche blue color ke <strong>"Save"</strong> button par click karein aur file save kar lein!
+            Click the blue <strong>"Save"</strong> button to save your clean PDF!
           </div>
         </div>
       </div>
       <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
         <button onclick="closeHelpModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition">
-          Samajh Aa Gaya (OK)
+          Got it
         </button>
       </div>
     </div>
@@ -192,29 +230,71 @@
       }
     }
 
-    // 1. Direct PDF Download via html2pdf
-    function handleDirectPDFDownload() {
-      showToast("⏳ <strong>PDF download generate ho raha hai...</strong> Thode seconds wait kijiye!");
+    // 1. Direct PDF Download via html2pdf (Fixed: 0 blank pages)
+    async function handleDirectPDFDownload() {
+      showToast("⏳ <strong>Generating clean PDF...</strong> Eliminating blank pages, please wait!");
       const content = document.getElementById('report-content');
       if (!content) return;
 
+      const pages = content.querySelectorAll('.page-container');
+      if (!pages || pages.length === 0) return;
+
       if (typeof html2pdf !== 'undefined') {
+        // Clone into a temporary rendering container with zero margin and exact A4 page constraints
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'fixed';
+        tempContainer.style.top = '-99999px';
+        tempContainer.style.left = '0';
+        tempContainer.style.width = '210mm';
+        tempContainer.style.background = '#ffffff';
+
+        pages.forEach((p, idx) => {
+          const pageClone = p.cloneNode(true);
+          pageClone.style.margin = '0px';
+          pageClone.style.boxShadow = 'none';
+          pageClone.style.border = 'none';
+          pageClone.style.width = '210mm';
+          pageClone.style.height = '296.5mm';
+          pageClone.style.minHeight = '296.5mm';
+          pageClone.style.maxHeight = '296.5mm';
+          pageClone.style.boxSizing = 'border-box';
+          pageClone.style.overflow = 'hidden';
+          pageClone.style.padding = '20mm 20mm 20mm 25mm';
+          pageClone.classList.remove('page-break');
+          if (idx < pages.length - 1) {
+            pageClone.classList.add('clean-pdf-break');
+          }
+          tempContainer.appendChild(pageClone);
+        });
+
+        document.body.appendChild(tempContainer);
+
         const opt = {
           margin: [0, 0, 0, 0],
           filename: 'SmartSplit_Project_Report_Group_7.pdf',
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 1.5, useCORS: true, logging: false },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            windowWidth: 794 // 210mm at standard 96 DPI
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], before: '.page-break' }
+          pagebreak: { mode: ['css', 'legacy'], after: '.clean-pdf-break' }
         };
 
-        html2pdf().set(opt).from(content).save().then(() => {
-          showToast("🎉 <strong>PDF download ho gaya hai!</strong> Apne Downloads folder me check karein.");
-        }).catch((err) => {
+        try {
+          await html2pdf().set(opt).from(tempContainer).save();
+          showToast("🎉 <strong>Clean PDF downloaded without any blank pages!</strong> Check your Downloads folder.");
+        } catch (err) {
           console.warn("Direct download error, falling back to print:", err);
-          showToast("Direct download me issue aaya, Chrome Print khul raha hai...");
           handlePrintPDF();
-        });
+        } finally {
+          if (tempContainer.parentNode) {
+            tempContainer.parentNode.removeChild(tempContainer);
+          }
+        }
       } else {
         handlePrintPDF();
       }
@@ -644,30 +724,27 @@
           <tr><td class="py-1"></td><td class="py-1">Certificate</td><td class="text-right py-1">iii</td></tr>
           <tr><td class="py-1"></td><td class="py-1">Acknowledgement</td><td class="text-right py-1">iv</td></tr>
           <tr><td class="py-1"></td><td class="py-1">Abstract</td><td class="text-right py-1">v</td></tr>
-          <tr><td class="py-1"></td><td class="py-1">List of Figures & Tables</td><td class="text-right py-1">vii</td></tr>
+          <tr><td class="py-1"></td><td class="py-1">Table of Contents</td><td class="text-right py-1">vi</td></tr>
           <tr class="font-bold"><td class="py-1 pt-2">Chapter 1</td><td class="py-1 pt-2">Introduction</td><td class="text-right py-1 pt-2">1</td></tr>
-          <tr><td class="py-1 pl-4">1.1</td><td class="py-1">Problem Definition</td><td class="text-right py-1">1</td></tr>
-          <tr><td class="py-1 pl-4">1.2</td><td class="py-1">Motivation & Project Background</td><td class="text-right py-1">2</td></tr>
-          <tr><td class="py-1 pl-4">1.3</td><td class="py-1">Project Objectives</td><td class="text-right py-1">3</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 2</td><td class="py-1 pt-2">Literature Survey & Existing Systems</td><td class="text-right py-1 pt-2">4</td></tr>
-          <tr><td class="py-1 pl-4">2.1</td><td class="py-1">Traditional Methods & Commercial Apps</td><td class="text-right py-1">4</td></tr>
-          <tr><td class="py-1 pl-4">2.2</td><td class="py-1">Identified Gaps & Proposed Work</td><td class="text-right py-1">5</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 3</td><td class="py-1 pt-2">System Requirements & Technology Stack</td><td class="text-right py-1 pt-2">6</td></tr>
-          <tr><td class="py-1 pl-4">3.1</td><td class="py-1">Hardware & Software Specifications</td><td class="text-right py-1">6</td></tr>
-          <tr><td class="py-1 pl-4">3.2</td><td class="py-1">Frontend Stack (React 19, TypeScript, Vite)</td><td class="text-right py-1">7</td></tr>
-          <tr><td class="py-1 pl-4">3.3</td><td class="py-1">Firebase Firestore & Cloud Infrastructure</td><td class="text-right py-1">8</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 4</td><td class="py-1 pt-2">System Architecture & Mathematical Methodology</td><td class="text-right py-1 pt-2">9</td></tr>
-          <tr><td class="py-1 pl-4">4.1</td><td class="py-1">System Architecture & Layered Workflow</td><td class="text-right py-1">9</td></tr>
-          <tr><td class="py-1 pl-4">4.2</td><td class="py-1">Greedy Debt Simplification Algorithm (O(N log N))</td><td class="text-right py-1">10</td></tr>
-          <tr><td class="py-1 pl-4">4.3</td><td class="py-1">Database Schema & Flow Diagrams</td><td class="text-right py-1">12</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 5</td><td class="py-1 pt-2">Implementation & Key Modules</td><td class="text-right py-1 pt-2">13</td></tr>
-          <tr><td class="py-1 pl-4">5.1</td><td class="py-1">Dashboard & Expense Split Modals</td><td class="text-right py-1">13</td></tr>
-          <tr><td class="py-1 pl-4">5.2</td><td class="py-1">Dynamic UPI QR Code Payment Module</td><td class="text-right py-1">14</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 6</td><td class="py-1 pt-2">Results, Testing & Discussion</td><td class="text-right py-1 pt-2">15</td></tr>
-          <tr><td class="py-1 pl-4">6.1</td><td class="py-1">Simulation Case Study & Reduction Ratio</td><td class="text-right py-1">15</td></tr>
-          <tr><td class="py-1 pl-4">6.2</td><td class="py-1">Live Application Screenshots & Verification</td><td class="text-right py-1">16</td></tr>
-          <tr class="font-bold"><td class="py-1 pt-2">Chapter 7</td><td class="py-1 pt-2">Conclusion & Future Scope</td><td class="text-right py-1 pt-2">18</td></tr>
-          <tr><td class="py-1"></td><td class="py-1">References</td><td class="text-right py-1">19</td></tr>
+          <tr><td class="py-1 pl-4">1.1</td><td class="py-1">Problem Definition & Motivation</td><td class="text-right py-1">1</td></tr>
+          <tr><td class="py-1 pl-4">1.2</td><td class="py-1">Project Objectives & Scope</td><td class="text-right py-1">1</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 2</td><td class="py-1 pt-2">Literature Survey & Existing Systems</td><td class="text-right py-1 pt-2">2</td></tr>
+          <tr><td class="py-1 pl-4">2.1</td><td class="py-1">Traditional Methods & Commercial Apps</td><td class="text-right py-1">2</td></tr>
+          <tr><td class="py-1 pl-4">2.2</td><td class="py-1">Comparative Feature Matrix</td><td class="text-right py-1">2</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 3</td><td class="py-1 pt-2">System Requirements & Technology Stack</td><td class="text-right py-1 pt-2">3</td></tr>
+          <tr><td class="py-1 pl-4">3.1</td><td class="py-1">Hardware & Software Specifications</td><td class="text-right py-1">3</td></tr>
+          <tr><td class="py-1 pl-4">3.2</td><td class="py-1">Frontend (React 19) & Cloud (Firebase)</td><td class="text-right py-1">3</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 4</td><td class="py-1 pt-2">System Architecture & Mathematical Methodology</td><td class="text-right py-1 pt-2">4</td></tr>
+          <tr><td class="py-1 pl-4">4.1</td><td class="py-1">Greedy Debt Simplification Algorithm</td><td class="text-right py-1">4</td></tr>
+          <tr><td class="py-1 pl-4">4.2</td><td class="py-1">Mathematical Graph Optimization (O(N log N))</td><td class="text-right py-1">4</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 5</td><td class="py-1 pt-2">Implementation & Key Feature Modules</td><td class="text-right py-1 pt-2">5</td></tr>
+          <tr><td class="py-1 pl-4">5.1</td><td class="py-1">Expense Splitting & Realtime Ledger</td><td class="text-right py-1">5</td></tr>
+          <tr><td class="py-1 pl-4">5.2</td><td class="py-1">Dynamic UPI QR Intent Generation</td><td class="text-right py-1">5</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 6</td><td class="py-1 pt-2">Results, Testing & Verification</td><td class="text-right py-1 pt-2">6</td></tr>
+          <tr><td class="py-1 pl-4">6.1</td><td class="py-1">Live Application Screenshots</td><td class="text-right py-1">6</td></tr>
+          <tr><td class="py-1 pl-4">6.2</td><td class="py-1">Performance Benchmarks & Latency Matrix</td><td class="text-right py-1">7</td></tr>
+          <tr class="font-bold"><td class="py-1 pt-2">Chapter 7</td><td class="py-1 pt-2">Conclusion & Future Scope</td><td class="text-right py-1 pt-2">8</td></tr>
+          <tr><td class="py-1"></td><td class="py-1">References</td><td class="text-right py-1">8</td></tr>
         </tbody>
       </table>
     </div>
@@ -781,7 +858,7 @@
 
     <div class="flex justify-between text-base pt-6 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 5</div>
+      <div class="text-right text-sm italic text-slate-500">Page 2</div>
     </div>
   </div>
 
@@ -864,7 +941,7 @@
 
     <div class="flex justify-between text-base pt-6 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 7</div>
+      <div class="text-right text-sm italic text-slate-500">Page 3</div>
     </div>
   </div>
 
@@ -912,7 +989,7 @@
 
     <div class="flex justify-between text-base pt-6 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 10</div>
+      <div class="text-right text-sm italic text-slate-500">Page 4</div>
     </div>
   </div>
 
@@ -959,7 +1036,7 @@
 
     <div class="flex justify-between text-base pt-6 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 13</div>
+      <div class="text-right text-sm italic text-slate-500">Page 5</div>
     </div>
   </div>
 
@@ -1014,7 +1091,7 @@
 
     <div class="flex justify-between text-base pt-4 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 16</div>
+      <div class="text-right text-sm italic text-slate-500">Page 6</div>
     </div>
   </div>
 
@@ -1085,7 +1162,7 @@
 
     <div class="flex justify-between text-base pt-4 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 17</div>
+      <div class="text-right text-sm italic text-slate-500">Page 7</div>
     </div>
   </div>
   </div>
@@ -1117,7 +1194,7 @@
 
     <div class="flex justify-between text-base pt-6 border-t border-slate-200">
       <div>Department of Computer Science & Engineering</div>
-      <div class="text-right text-sm italic text-slate-500">Page 19</div>
+      <div class="text-right text-sm italic text-slate-500">Page 8</div>
     </div>
   </div>
 

@@ -29,7 +29,33 @@ const AppContent: React.FC = () => {
     editingExpense,
     isAuthenticated,
     authLoading,
+    openReportModal,
   } = useApp();
+
+  // Listen for ?report=true or #report in URL to open report instantly on any route or auth state
+  React.useEffect(() => {
+    const checkReportParam = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.toLowerCase();
+      if (
+        searchParams.get('report') === 'true' ||
+        searchParams.get('report') === '1' ||
+        searchParams.has('report') ||
+        hash === '#report' ||
+        hash === '#/report'
+      ) {
+        openReportModal();
+      }
+    };
+
+    checkReportParam();
+    window.addEventListener('hashchange', checkReportParam);
+    window.addEventListener('popstate', checkReportParam);
+    return () => {
+      window.removeEventListener('hashchange', checkReportParam);
+      window.removeEventListener('popstate', checkReportParam);
+    };
+  }, [openReportModal]);
 
   if (authLoading) {
     return (
@@ -43,16 +69,18 @@ const AppContent: React.FC = () => {
   }
 
   // If user is not authenticated or is viewing unauthenticated views:
-  if (!isAuthenticated) {
-    if (currentView === 'login') return <LoginPage />;
-    if (currentView === 'register') return <RegisterPage />;
-    return <LandingPage />;
-  }
+  if (!isAuthenticated || currentView === 'landing' || currentView === 'login' || currentView === 'register') {
+    let authView = <LandingPage />;
+    if (currentView === 'login') authView = <LoginPage />;
+    if (currentView === 'register') authView = <RegisterPage />;
 
-  // If authenticated but explicitly on landing / auth pages:
-  if (currentView === 'landing') return <LandingPage />;
-  if (currentView === 'login') return <LoginPage />;
-  if (currentView === 'register') return <RegisterPage />;
+    return (
+      <>
+        {authView}
+        <ProjectReportModal />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans overflow-hidden select-none">

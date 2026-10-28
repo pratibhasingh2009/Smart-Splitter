@@ -14,6 +14,7 @@ import {
   X,
   MessageSquare,
   FileText,
+  Presentation,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PageView } from '../../types';
@@ -29,6 +30,7 @@ export const Sidebar: React.FC = () => {
     setIsSidebarOpen,
     toggleSidebar,
     groupMessages,
+    currentUser,
   } = useApp();
 
   const navItems: { id: PageView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -141,6 +143,18 @@ export const Sidebar: React.FC = () => {
 
         {/* Bottom Section - Pinned at bottom, always fully visible */}
         <div className="shrink-0 p-3 sm:p-4 space-y-2 border-t border-white/10 bg-[#0f4b82]/40 backdrop-blur-xs">
+          {/* Project Presentation (.pptx) */}
+          <a
+            id="sidebar-btn-presentation"
+            href="/SmartSplit_Mini_Project_Presentation_Group7.pptx"
+            download="SmartSplit_Mini_Project_Presentation_Group7.pptx"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#F5B942] hover:bg-[#e5aa33] text-[#1F2937] text-xs font-bold transition-all shadow-sm active:scale-98"
+            title="Download College Presentation (.pptx)"
+          >
+            <Presentation className="w-4 h-4 text-[#1F2937]" />
+            <span>Project Presentation (.pptx)</span>
+          </a>
+
           {/* User Flow & Architecture Button */}
           <button
             id="btn-view-user-flow"
